@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
 import com.tickatch.product_service.product.domain.exception.ProductException;
+import com.tickatch.product_service.product.domain.vo.ProductStatus;
+import com.tickatch.product_service.product.domain.vo.ProductType;
 import com.tickatch.product_service.product.domain.vo.Schedule;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,6 +49,32 @@ class ProductTest {
 
       assertThat(product.getStatus()).isEqualTo(ProductStatus.DRAFT);
       assertThat(product.isDraft()).isTrue();
+    }
+
+    @Nested
+    class 일정_조회_테스트 {
+
+      @Test
+      void getStartAt은_스케줄의_시작시간을_반환한다() {
+        LocalDateTime startAt = LocalDateTime.now().plusDays(7);
+        LocalDateTime endAt = LocalDateTime.now().plusDays(8);
+        Schedule schedule = new Schedule(startAt, endAt);
+
+        Product product = Product.create("테스트 공연", ProductType.CONCERT, 120, schedule, 1L);
+
+        assertThat(product.getStartAt()).isEqualTo(startAt);
+      }
+
+      @Test
+      void getEndAt은_스케줄의_종료시간을_반환한다() {
+        LocalDateTime startAt = LocalDateTime.now().plusDays(7);
+        LocalDateTime endAt = LocalDateTime.now().plusDays(8);
+        Schedule schedule = new Schedule(startAt, endAt);
+
+        Product product = Product.create("테스트 공연", ProductType.CONCERT, 120, schedule, 1L);
+
+        assertThat(product.getEndAt()).isEqualTo(endAt);
+      }
     }
 
     @Nested
