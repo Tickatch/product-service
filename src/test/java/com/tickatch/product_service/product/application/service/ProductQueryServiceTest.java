@@ -34,11 +34,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 @DisplayName("ProductQueryService 테스트")
 class ProductQueryServiceTest {
 
-  @InjectMocks
-  private ProductQueryService productQueryService;
+  @InjectMocks private ProductQueryService productQueryService;
 
-  @Mock
-  private ProductRepository productRepository;
+  @Mock private ProductRepository productRepository;
 
   private LocalDateTime startAt;
   private LocalDateTime endAt;
@@ -94,10 +92,11 @@ class ProductQueryServiceTest {
 
       assertThatThrownBy(() -> productQueryService.getProduct(999L))
           .isInstanceOf(ProductException.class)
-          .satisfies(e -> {
-            ProductException pe = (ProductException) e;
-            assertThat(pe.getErrorArgs()).containsExactly(999L);
-          });
+          .satisfies(
+              e -> {
+                ProductException pe = (ProductException) e;
+                assertThat(pe.getErrorArgs()).containsExactly(999L);
+              });
     }
   }
 
@@ -106,10 +105,7 @@ class ProductQueryServiceTest {
 
     @Test
     void 조건에_맞는_상품_목록을_페이징_조회할_수_있다() {
-      List<Product> products = List.of(
-          createProduct(1L, "콘서트A"),
-          createProduct(2L, "콘서트B")
-      );
+      List<Product> products = List.of(createProduct(1L, "콘서트A"), createProduct(2L, "콘서트B"));
       Page<Product> productPage = new PageImpl<>(products, PageRequest.of(0, 10), 2);
       ProductSearchCondition condition = ProductSearchCondition.builder().build();
       Pageable pageable = PageRequest.of(0, 10);
@@ -127,9 +123,7 @@ class ProductQueryServiceTest {
     @Test
     void 검색_결과가_없으면_빈_페이지를_반환한다() {
       Page<Product> emptyPage = new PageImpl<>(List.of(), PageRequest.of(0, 10), 0);
-      ProductSearchCondition condition = ProductSearchCondition.builder()
-          .name("존재하지않는상품")
-          .build();
+      ProductSearchCondition condition = ProductSearchCondition.builder().name("존재하지않는상품").build();
       Pageable pageable = PageRequest.of(0, 10);
 
       given(productRepository.findAllByCondition(condition, pageable)).willReturn(emptyPage);
@@ -142,10 +136,7 @@ class ProductQueryServiceTest {
 
     @Test
     void 페이지_정보가_정확히_반환된다() {
-      List<Product> products = List.of(
-          createProduct(1L, "콘서트A"),
-          createProduct(2L, "콘서트B")
-      );
+      List<Product> products = List.of(createProduct(1L, "콘서트A"), createProduct(2L, "콘서트B"));
       Page<Product> productPage = new PageImpl<>(products, PageRequest.of(1, 2), 10);
       ProductSearchCondition condition = ProductSearchCondition.builder().build();
       Pageable pageable = PageRequest.of(1, 2);

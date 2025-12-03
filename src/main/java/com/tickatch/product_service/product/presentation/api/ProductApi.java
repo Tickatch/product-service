@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/product")
+@RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
 public class ProductApi {
   private final ProductCommandService productCommandService;
@@ -40,8 +40,8 @@ public class ProductApi {
   @GetMapping
   public ApiResponse<PageResponse<ProductResponse>> getProducts(
       @ModelAttribute ProductSearchRequest request,
-      @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
-  ) {
+      @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
+          Pageable pageable) {
     var products = productQueryService.getProducts(request.toCondition(), pageable);
     return ApiResponse.success(PageResponse.from(products));
   }
@@ -56,16 +56,15 @@ public class ProductApi {
   @ResponseStatus(HttpStatus.CREATED)
   public ApiResponse<Long> createProduct(
       @Valid @RequestBody ProductCreateRequest request,
-      @AuthenticationPrincipal AuthenticatedUser user
-  ) {
-    Long productId = productCommandService.createProduct(
-        request.name(),
-        request.productType(),
-        request.runningTime(),
-        request.startAt(),
-        request.endAt(),
-        request.stageId()
-    );
+      @AuthenticationPrincipal AuthenticatedUser user) {
+    Long productId =
+        productCommandService.createProduct(
+            request.name(),
+            request.productType(),
+            request.runningTime(),
+            request.startAt(),
+            request.endAt(),
+            request.stageId());
     return ApiResponse.success(productId);
   }
 
@@ -73,16 +72,14 @@ public class ProductApi {
   public ApiResponse<Void> updateProduct(
       @PathVariable Long id,
       @Valid @RequestBody ProductUpdateRequest request,
-      @AuthenticationPrincipal AuthenticatedUser user
-  ) {
+      @AuthenticationPrincipal AuthenticatedUser user) {
     productCommandService.updateProduct(
         id,
         request.name(),
         request.productType(),
         request.runningTime(),
         request.startAt(),
-        request.endAt()
-    );
+        request.endAt());
     return ApiResponse.success();
   }
 
@@ -90,8 +87,7 @@ public class ProductApi {
   public ApiResponse<Void> changeStage(
       @PathVariable Long id,
       @Valid @RequestBody StageChangeRequest request,
-      @AuthenticationPrincipal AuthenticatedUser user
-  ) {
+      @AuthenticationPrincipal AuthenticatedUser user) {
     productCommandService.changeStage(id, request.stageId());
     return ApiResponse.success();
   }
@@ -100,17 +96,14 @@ public class ProductApi {
   public ApiResponse<Void> changeStatus(
       @PathVariable Long id,
       @Valid @RequestBody StatusChangeRequest request,
-      @AuthenticationPrincipal AuthenticatedUser user
-  ) {
+      @AuthenticationPrincipal AuthenticatedUser user) {
     productCommandService.changeStatus(id, request.status());
     return ApiResponse.success();
   }
 
   @DeleteMapping("/{id}")
   public ApiResponse<Void> cancelProduct(
-      @PathVariable Long id,
-      @AuthenticationPrincipal AuthenticatedUser user
-  ) {
+      @PathVariable Long id, @AuthenticationPrincipal AuthenticatedUser user) {
     productCommandService.cancelProduct(id, user.getUserId());
     return ApiResponse.success();
   }

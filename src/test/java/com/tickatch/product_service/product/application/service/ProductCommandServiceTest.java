@@ -29,11 +29,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 @DisplayName("ProductCommandService 테스트")
 class ProductCommandServiceTest {
 
-  @InjectMocks
-  private ProductCommandService productCommandService;
+  @InjectMocks private ProductCommandService productCommandService;
 
-  @Mock
-  private ProductRepository productRepository;
+  @Mock private ProductRepository productRepository;
 
   private LocalDateTime startAt;
   private LocalDateTime endAt;
@@ -52,14 +50,9 @@ class ProductCommandServiceTest {
       Product savedProduct = createProduct(1L);
       given(productRepository.save(any(Product.class))).willReturn(savedProduct);
 
-      Long productId = productCommandService.createProduct(
-          "테스트 공연",
-          ProductType.CONCERT,
-          120,
-          startAt,
-          endAt,
-          1L
-      );
+      Long productId =
+          productCommandService.createProduct(
+              "테스트 공연", ProductType.CONCERT, 120, startAt, endAt, 1L);
 
       assertThat(productId).isEqualTo(1L);
       verify(productRepository).save(any(Product.class));
@@ -69,14 +62,10 @@ class ProductCommandServiceTest {
     void 잘못된_일정으로_생성하면_예외가_발생한다() {
       LocalDateTime invalidEndAt = startAt.minusDays(1);
 
-      assertThatThrownBy(() -> productCommandService.createProduct(
-          "테스트 공연",
-          ProductType.CONCERT,
-          120,
-          startAt,
-          invalidEndAt,
-          1L
-      ))
+      assertThatThrownBy(
+              () ->
+                  productCommandService.createProduct(
+                      "테스트 공연", ProductType.CONCERT, 120, startAt, invalidEndAt, 1L))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.INVALID_SCHEDULE);
@@ -91,14 +80,7 @@ class ProductCommandServiceTest {
       Product product = createProduct(1L);
       given(productRepository.findById(1L)).willReturn(Optional.of(product));
 
-      productCommandService.updateProduct(
-          1L,
-          "수정된 공연",
-          ProductType.MUSICAL,
-          150,
-          startAt,
-          endAt
-      );
+      productCommandService.updateProduct(1L, "수정된 공연", ProductType.MUSICAL, 150, startAt, endAt);
 
       assertThat(product.getName()).isEqualTo("수정된 공연");
       assertThat(product.getProductType()).isEqualTo(ProductType.MUSICAL);
@@ -109,14 +91,10 @@ class ProductCommandServiceTest {
     void 존재하지_않는_상품을_수정하면_예외가_발생한다() {
       given(productRepository.findById(999L)).willReturn(Optional.empty());
 
-      assertThatThrownBy(() -> productCommandService.updateProduct(
-          999L,
-          "수정된 공연",
-          ProductType.MUSICAL,
-          150,
-          startAt,
-          endAt
-      ))
+      assertThatThrownBy(
+              () ->
+                  productCommandService.updateProduct(
+                      999L, "수정된 공연", ProductType.MUSICAL, 150, startAt, endAt))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.PRODUCT_NOT_FOUND);

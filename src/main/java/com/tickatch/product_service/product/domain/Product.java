@@ -90,10 +90,7 @@ public class Product extends AbstractAuditEntity {
   public void changeStage(Long stageId) {
     validateNotCancelled();
     validateStageId(stageId);
-
-    if (schedule.isStarted()) {
-      throw new ProductException(ProductErrorCode.STAGE_CHANGE_NOT_ALLOWED);
-    }
+    validateIsStartedSchedule();
 
     this.stageId = stageId;
   }
@@ -101,11 +98,7 @@ public class Product extends AbstractAuditEntity {
   public void changeStatus(ProductStatus newStatus) {
     validateNotCancelled();
     validateProductStatus(newStatus);
-
-    if (!this.status.canChangeTo(newStatus)) {
-      throw new ProductException(
-          ProductErrorCode.PRODUCT_STATUS_CHANGE_NOT_ALLOWED, this.status.name(), newStatus.name());
-    }
+    validateCanChangeToStatus(newStatus);
 
     this.status = newStatus;
   }
@@ -189,6 +182,19 @@ public class Product extends AbstractAuditEntity {
   private static void validateProductStatus(ProductStatus status) {
     if (Objects.isNull(status)) {
       throw new ProductException(ProductErrorCode.INVALID_PRODUCT_STATUS);
+    }
+  }
+
+  private void validateCanChangeToStatus(ProductStatus newStatus) {
+    if (!this.status.canChangeTo(newStatus)) {
+      throw new ProductException(
+          ProductErrorCode.PRODUCT_STATUS_CHANGE_NOT_ALLOWED, this.status.name(), newStatus.name());
+    }
+  }
+
+  public void validateIsStartedSchedule() {
+    if (schedule.isStarted()) {
+      throw new ProductException(ProductErrorCode.STAGE_CHANGE_NOT_ALLOWED);
     }
   }
 

@@ -5,11 +5,7 @@ import com.tickatch.product_service.product.domain.vo.ProductStatus;
 import com.tickatch.product_service.product.domain.vo.ProductType;
 
 public record ProductSearchRequest(
-    String name,
-    ProductType productType,
-    ProductStatus status,
-    Long stageId
-) {
+    String name, ProductType productType, ProductStatus status, Long stageId) {
   public ProductSearchCondition toCondition() {
     return ProductSearchCondition.builder()
         .name(name)
