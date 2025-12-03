@@ -20,8 +20,8 @@ import lombok.NoArgsConstructor;
 @Embeddable
 @Getter
 @EqualsAndHashCode
-@NoArgsConstructor(access = AccessLevel.PROTECTED)  // Hibernate용 기본 생성자
-public class Schedule {
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // Hibernate용 기본 생성자
+public final class Schedule {
 
   @Column(name = "start_at", nullable = false)
   private LocalDateTime startAt;
