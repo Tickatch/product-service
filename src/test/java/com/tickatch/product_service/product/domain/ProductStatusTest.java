@@ -1,5 +1,6 @@
 package com.tickatch.product_service.product.domain;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.DisplayName;
@@ -7,8 +8,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("ProductStatus Enum 테스트")
 class ProductStatusTest {
@@ -24,14 +23,13 @@ class ProductStatusTest {
               ProductStatus.PENDING,
               ProductStatus.ON_SALE,
               ProductStatus.SOLD_OUT,
-              ProductStatus.CANCELLED
-          );
+              ProductStatus.CANCELLED);
     }
   }
 
   @Nested
   class Description_테스트 {
-    
+
     @Test
     void DRAFT의_description은_임시저장이다() {
       assertThat(ProductStatus.DRAFT.getDescription()).isEqualTo("임시저장");
@@ -51,6 +49,7 @@ class ProductStatusTest {
     void SOLD_OUT의_description은_매진이다() {
       assertThat(ProductStatus.SOLD_OUT.getDescription()).isEqualTo("매진");
     }
+
     @Test
     void CANCELLED의_description은_취소됨이다() {
       assertThat(ProductStatus.CANCELLED.getDescription()).isEqualTo("취소됨");
@@ -68,7 +67,7 @@ class ProductStatusTest {
 
     @Test
     void null로는_변경할_수_없다() {
-      for (ProductStatus status: ProductStatus.values()) {
+      for (ProductStatus status : ProductStatus.values()) {
         assertThat(status.canChangeTo(status)).isFalse();
       }
     }
@@ -119,7 +118,6 @@ class ProductStatusTest {
       @Test
       void CANCELLED로_변경할_수_있다() {
         assertThat(ProductStatus.PENDING.canChangeTo(ProductStatus.CANCELLED)).isTrue();
-
       }
 
       @Test

@@ -1,5 +1,7 @@
 package com.tickatch.product_service.product.domain.vo;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
@@ -8,9 +10,6 @@ import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("Schedule 테스트")
 class ScheduleTest {
@@ -35,8 +34,7 @@ class ScheduleTest {
 
       assertThatThrownBy(() -> new Schedule(null, endAt))
           .isInstanceOf(ProductException.class)
-          .extracting(e ->
-              ((ProductException) e).getErrorCode())
+          .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.INVALID_SCHEDULE);
     }
 
@@ -77,20 +75,16 @@ class ScheduleTest {
 
     @Test
     void 시작_일시가_지났으면_true를_반환한다() {
-      Schedule schedule = new Schedule(
-          LocalDateTime.now().minusDays(1),
-          LocalDateTime.now().plusDays(1)
-      );
+      Schedule schedule =
+          new Schedule(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
 
       assertThat(schedule.isStarted()).isTrue();
     }
 
     @Test
     void 시작_일시가_지나지_않았으면_false를_반환한다() {
-      Schedule schedule = new Schedule(
-          LocalDateTime.now().plusDays(1),
-          LocalDateTime.now().plusDays(2)
-      );
+      Schedule schedule =
+          new Schedule(LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(2));
 
       assertThat(schedule.isStarted()).isFalse();
     }
@@ -101,20 +95,16 @@ class ScheduleTest {
 
     @Test
     void 종료_일시가_지났으면_true를_반환한다() {
-      Schedule schedule = new Schedule(
-          LocalDateTime.now().minusDays(2),
-          LocalDateTime.now().minusDays(1)
-      );
+      Schedule schedule =
+          new Schedule(LocalDateTime.now().minusDays(2), LocalDateTime.now().minusDays(1));
 
       assertThat(schedule.isEnded()).isTrue();
     }
 
     @Test
     void 종료_일시가_지나지_않았으면_false를_반환한다() {
-      Schedule schedule = new Schedule(
-          LocalDateTime.now().minusDays(1),
-          LocalDateTime.now().plusDays(1)
-      );
+      Schedule schedule =
+          new Schedule(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
 
       assertThat(schedule.isEnded()).isFalse();
     }
@@ -125,30 +115,24 @@ class ScheduleTest {
 
     @Test
     void 현재_시각이_시작과_종료_사이면_true를_반환한다() {
-      Schedule schedule = new Schedule(
-          LocalDateTime.now().minusHours(1),
-          LocalDateTime.now().plusHours(1)
-      );
+      Schedule schedule =
+          new Schedule(LocalDateTime.now().minusHours(1), LocalDateTime.now().plusHours(1));
 
       assertThat(schedule.isOngoing()).isTrue();
     }
 
     @Test
     void 아직_시작_전이면_false를_반환한다() {
-      Schedule schedule = new Schedule(
-          LocalDateTime.now().plusDays(1),
-          LocalDateTime.now().plusDays(2)
-      );
+      Schedule schedule =
+          new Schedule(LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(2));
 
       assertThat(schedule.isOngoing()).isFalse();
     }
 
     @Test
     void 이미_종료되었으면_false를_반환한다() {
-      Schedule schedule = new Schedule(
-          LocalDateTime.now().minusDays(2),
-          LocalDateTime.now().minusDays(1)
-      );
+      Schedule schedule =
+          new Schedule(LocalDateTime.now().minusDays(2), LocalDateTime.now().minusDays(1));
 
       assertThat(schedule.isOngoing()).isFalse();
     }
@@ -159,10 +143,8 @@ class ScheduleTest {
 
     @Test
     void 같은_시작과_종료_일시를_가진_schedule은_동등하다() {
-      LocalDateTime startAt = LocalDateTime.of(
-          2025, 6, 1, 10, 0);
-      LocalDateTime endAt = LocalDateTime.of(
-          2025, 6, 1, 12, 0);
+      LocalDateTime startAt = LocalDateTime.of(2025, 6, 1, 10, 0);
+      LocalDateTime endAt = LocalDateTime.of(2025, 6, 1, 12, 0);
 
       Schedule schedule1 = new Schedule(startAt, endAt);
       Schedule schedule2 = new Schedule(startAt, endAt);
@@ -173,13 +155,10 @@ class ScheduleTest {
 
     @Test
     void 다른_시작_일시를_가진_schedule은_동등하지_않다() {
-      LocalDateTime endAt = LocalDateTime.of(
-          2025, 6, 1, 12, 0);
+      LocalDateTime endAt = LocalDateTime.of(2025, 6, 1, 12, 0);
 
-      Schedule schedule1 = new Schedule(LocalDateTime.of(
-          2025, 6, 1, 10, 0), endAt);
-      Schedule schedule2 = new Schedule(LocalDateTime.of(
-          2025, 6, 1, 11, 0), endAt);
+      Schedule schedule1 = new Schedule(LocalDateTime.of(2025, 6, 1, 10, 0), endAt);
+      Schedule schedule2 = new Schedule(LocalDateTime.of(2025, 6, 1, 11, 0), endAt);
 
       assertThat(schedule1).isNotEqualTo(schedule2);
     }

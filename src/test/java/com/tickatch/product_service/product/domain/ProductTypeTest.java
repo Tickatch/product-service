@@ -1,5 +1,6 @@
 package com.tickatch.product_service.product.domain;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.DisplayName;
@@ -7,8 +8,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("ProductType Enum 테스트")
 class ProductTypeTest {
@@ -20,11 +19,7 @@ class ProductTypeTest {
     void ProductType은_CONCERT_MUSICAL_PLAY_SPORTS_값이_존재한다() {
       assertThat(ProductType.values())
           .containsExactly(
-              ProductType.CONCERT,
-              ProductType.MUSICAL,
-              ProductType.PLAY,
-              ProductType.SPORTS
-          );
+              ProductType.CONCERT, ProductType.MUSICAL, ProductType.PLAY, ProductType.SPORTS);
     }
   }
 

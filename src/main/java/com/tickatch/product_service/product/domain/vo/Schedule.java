@@ -12,16 +12,11 @@ import java.util.Objects;
  *
  * @author 김준형
  * @since 1.0.0
- * */
+ */
 @Embeddable
 public record Schedule(
-
-    @Column(name = "start_at", nullable = false)
-    LocalDateTime startAt,
-
-    @Column(name = "end_at", nullable = false)
-    LocalDateTime endAt
-) {
+    @Column(name = "start_at", nullable = false) LocalDateTime startAt,
+    @Column(name = "end_at", nullable = false) LocalDateTime endAt) {
   public Schedule {
     validate(startAt, endAt);
   }

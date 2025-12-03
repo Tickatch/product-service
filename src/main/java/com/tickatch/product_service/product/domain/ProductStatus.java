@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum ProductStatus {
-
   DRAFT("임시저장"),
   PENDING("판매대기"),
   ON_SALE("판매중"),
