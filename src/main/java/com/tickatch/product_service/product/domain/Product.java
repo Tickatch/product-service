@@ -3,6 +3,8 @@ package com.tickatch.product_service.product.domain;
 import com.tickatch.product_service.global.domain.AbstractAuditEntity;
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
 import com.tickatch.product_service.product.domain.exception.ProductException;
+import com.tickatch.product_service.product.domain.vo.ProductStatus;
+import com.tickatch.product_service.product.domain.vo.ProductType;
 import com.tickatch.product_service.product.domain.vo.Schedule;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
@@ -13,6 +15,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -114,6 +117,14 @@ public class Product extends AbstractAuditEntity {
 
     this.status = ProductStatus.CANCELLED;
     delete(cancelledBy);
+  }
+
+  public LocalDateTime getStartAt() {
+    return this.schedule.getStartAt();
+  }
+
+  public LocalDateTime getEndAt() {
+    return this.schedule.getEndAt();
   }
 
   public boolean isDraft() {
