@@ -3,6 +3,8 @@ package com.tickatch.product_service.product.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tickatch.product_service.product.domain.repository.dto.ProductSearchCondition;
+import com.tickatch.product_service.product.domain.vo.ProductStatus;
+import com.tickatch.product_service.product.domain.vo.ProductType;
 import com.tickatch.product_service.product.domain.vo.Schedule;
 import java.time.LocalDateTime;
 import java.util.Optional;
