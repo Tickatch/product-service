@@ -6,6 +6,10 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 /**
  * 상품 일정을 나타내는 Value Object
@@ -14,11 +18,21 @@ import java.util.Objects;
  * @since 1.0.0
  */
 @Embeddable
-public record Schedule(
-    @Column(name = "start_at", nullable = false) LocalDateTime startAt,
-    @Column(name = "end_at", nullable = false) LocalDateTime endAt) {
-  public Schedule {
+@Getter
+@EqualsAndHashCode
+@NoArgsConstructor(access = AccessLevel.PROTECTED)  // Hibernate용 기본 생성자
+public class Schedule {
+
+  @Column(name = "start_at", nullable = false)
+  private LocalDateTime startAt;
+
+  @Column(name = "end_at", nullable = false)
+  private LocalDateTime endAt;
+
+  public Schedule(LocalDateTime startAt, LocalDateTime endAt) {
     validate(startAt, endAt);
+    this.startAt = startAt;
+    this.endAt = endAt;
   }
 
   public boolean isStarted() {
