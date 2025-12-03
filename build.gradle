@@ -99,6 +99,9 @@ dependencies {
     // archunit
     testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.1'
 
+    // SpotBugs 분석용 (누락된 어노테이션 해결)
+    compileOnly 'org.jetbrains:annotations:24.0.0'
+
     runtimeOnly 'com.h2database:h2'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
@@ -120,7 +123,7 @@ sourceSets {
     main.java.srcDirs += [querydslDir]
 }
 
-tasks.withType(JavaCompile).configureEach {
+tasks.named('compileJava') {
     options.generatedSourceOutputDirectory = file(querydslDir)
 }
 
@@ -153,4 +156,8 @@ spotless {
 
 tasks.check {
     dependsOn 'spotlessCheck'
+}
+
+tasks.named('spotbugsMain') {
+    dependsOn 'compileJava'
 }
