@@ -24,8 +24,8 @@ class ScheduleTest {
 
       Schedule schedule = new Schedule(startAt, endAt);
 
-      assertThat(schedule.startAt()).isEqualTo(startAt);
-      assertThat(schedule.endAt()).isEqualTo(endAt);
+      assertThat(schedule.getStartAt()).isEqualTo(startAt);
+      assertThat(schedule.getEndAt()).isEqualTo(endAt);
     }
 
     @Test
