@@ -15,10 +15,8 @@ import java.util.Objects;
  */
 @Embeddable
 public record Schedule(
-    @Column(name = "start_at", nullable = false)
-    LocalDateTime startAt,
-    @Column(name = "end_at", nullable = false)
-    LocalDateTime endAt) {
+    @Column(name = "start_at", nullable = false) LocalDateTime startAt,
+    @Column(name = "end_at", nullable = false) LocalDateTime endAt) {
   public Schedule {
     validate(startAt, endAt);
   }

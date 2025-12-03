@@ -41,8 +41,7 @@ public class Product extends AbstractAuditEntity {
   @Column(name = "running_time", nullable = false)
   private Integer runningTime;
 
-  @Embedded
-  private Schedule schedule;
+  @Embedded private Schedule schedule;
 
   @Column(name = "stage_id", nullable = false)
   private Long stageId;
@@ -52,12 +51,7 @@ public class Product extends AbstractAuditEntity {
   private ProductStatus status;
 
   private Product(
-      String name,
-      ProductType productType,
-      Integer runningTime,
-      Schedule schedule,
-      Long stageId
-  ) {
+      String name, ProductType productType, Integer runningTime, Schedule schedule, Long stageId) {
     this.name = name;
     this.productType = productType;
     this.runningTime = runningTime;
@@ -67,12 +61,7 @@ public class Product extends AbstractAuditEntity {
   }
 
   public static Product create(
-      String name,
-      ProductType productType,
-      Integer runningTime,
-      Schedule schedule,
-      Long stageId
-  ) {
+      String name, ProductType productType, Integer runningTime, Schedule schedule, Long stageId) {
     validateName(name);
     validateProductType(productType);
     validateRunningTime(runningTime);
@@ -82,12 +71,7 @@ public class Product extends AbstractAuditEntity {
     return new Product(name, productType, runningTime, schedule, stageId);
   }
 
-  public void update(
-      String name,
-      ProductType productType,
-      Integer runningTime,
-      Schedule schedule
-  ) {
+  public void update(String name, ProductType productType, Integer runningTime, Schedule schedule) {
     validateNotCancelled();
     validateName(name);
     validateProductType(productType);
@@ -117,10 +101,7 @@ public class Product extends AbstractAuditEntity {
 
     if (!this.status.canChangeTo(newStatus)) {
       throw new ProductException(
-          ProductErrorCode.PRODUCT_STATUS_CHANGE_NOT_ALLOWED,
-          this.status.name(),
-          newStatus.name()
-      );
+          ProductErrorCode.PRODUCT_STATUS_CHANGE_NOT_ALLOWED, this.status.name(), newStatus.name());
     }
 
     this.status = newStatus;
