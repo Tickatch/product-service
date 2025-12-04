@@ -12,8 +12,7 @@ public class ProductException extends BusinessException {
     super(errorCode, errorArgs);
   }
 
-  public ProductException(ProductErrorCode errorCode,Throwable cause ,Object... errorArgs) {
+  public ProductException(ProductErrorCode errorCode, Throwable cause, Object... errorArgs) {
     super(errorCode, cause, errorArgs);
   }
-
 }
