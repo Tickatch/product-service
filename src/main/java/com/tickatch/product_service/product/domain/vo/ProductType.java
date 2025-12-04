@@ -1,4 +1,4 @@
-package com.tickatch.product_service.product.domain;
+package com.tickatch.product_service.product.domain.vo;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
