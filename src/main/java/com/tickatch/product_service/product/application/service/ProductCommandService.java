@@ -1,5 +1,6 @@
 package com.tickatch.product_service.product.application.service;
 
+import com.tickatch.product_service.product.application.messaging.ProductEventPublisher;
 import com.tickatch.product_service.product.domain.Product;
 import com.tickatch.product_service.product.domain.ProductRepository;
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductCommandService {
 
   private final ProductRepository productRepository;
+  private final ProductEventPublisher eventPublisher;
 
   public Long createProduct(
       String name,
@@ -57,6 +59,8 @@ public class ProductCommandService {
   public void cancelProduct(Long productId, String cancellBy) {
     Product product = findProductById(productId);
     product.cancel(cancellBy);
+
+    eventPublisher.publishCancelled(product);
   }
 
   private Product findProductById(Long productId) {
