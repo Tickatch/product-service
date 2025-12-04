@@ -20,8 +20,10 @@ public class ProductQueryService {
   private final ProductRepository productRepository;
 
   public ProductResponse getProduct(Long productId) {
-    Product product = productRepository.findById(productId)
-        .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND, productId));
+    Product product =
+        productRepository
+            .findById(productId)
+            .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND, productId));
     return ProductResponse.from(product);
   }
 

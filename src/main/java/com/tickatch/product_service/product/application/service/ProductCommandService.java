@@ -2,10 +2,10 @@ package com.tickatch.product_service.product.application.service;
 
 import com.tickatch.product_service.product.domain.Product;
 import com.tickatch.product_service.product.domain.ProductRepository;
-import com.tickatch.product_service.product.domain.vo.ProductStatus;
-import com.tickatch.product_service.product.domain.vo.ProductType;
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
 import com.tickatch.product_service.product.domain.exception.ProductException;
+import com.tickatch.product_service.product.domain.vo.ProductStatus;
+import com.tickatch.product_service.product.domain.vo.ProductType;
 import com.tickatch.product_service.product.domain.vo.Schedule;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +25,7 @@ public class ProductCommandService {
       Integer runningTime,
       LocalDateTime startAt,
       LocalDateTime endAt,
-      Long stageId
-  ) {
+      Long stageId) {
     Schedule schedule = new Schedule(startAt, endAt);
     Product product = Product.create(name, productType, runningTime, schedule, stageId);
     Product saved = productRepository.save(product);
@@ -39,8 +38,7 @@ public class ProductCommandService {
       ProductType productType,
       Integer runningTime,
       LocalDateTime startAt,
-      LocalDateTime endAt
-  ) {
+      LocalDateTime endAt) {
     Schedule schedule = new Schedule(startAt, endAt);
     Product product = findProductById(productId);
     product.update(name, productType, runningTime, schedule);
@@ -62,7 +60,8 @@ public class ProductCommandService {
   }
 
   private Product findProductById(Long productId) {
-    return productRepository.findById(productId)
+    return productRepository
+        .findById(productId)
         .orElseThrow(() -> new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND, productId));
   }
 }
