@@ -17,7 +17,21 @@ import org.springframework.stereotype.Component;
 /**
  * RabbitMQ 기반 상품 이벤트 발행 구현체.
  *
- * <p>상품 도메인에서 발생하는 이벤트를 RabbitMQ를 통해 다른 서비스로 발행한다.
+ * <p>상품 도메인에서 발생하는 이벤트를 RabbitMQ를 통해 다른 서비스로 발행한다. 상품 취소 시 ReservationSeat, Reservation, Ticket
+ * 서비스로 각각 이벤트를 발행한다.
+ *
+ * <p>발행 흐름:
+ *
+ * <ol>
+ *   <li>DomainEvent 생성
+ *   <li>IntegrationEvent로 래핑
+ *   <li>RabbitTemplate을 통해 발행
+ * </ol>
+ *
+ * @author Tickatch
+ * @since 1.0.0
+ * @see ProductEventPublisher
+ * @see IntegrationEvent
  */
 @Slf4j
 @Component
@@ -32,6 +46,15 @@ public class RabbitProductEventPublisher implements ProductEventPublisher {
   @Value("${messaging.exchange.product:tickatch.product}")
   private String productExchange;
 
+  /**
+   * 상품 취소 이벤트를 발행한다.
+   *
+   * <p>3개 서비스(ReservationSeat, Reservation, Ticket)로 각각 이벤트를 발행한다. 하나라도 발행에 실패하면 {@link
+   * ProductException}을 발생시킨다.
+   *
+   * @param product 취소된 상품 엔티티
+   * @throws ProductException 이벤트 발행 실패 시 ({@link ProductErrorCode#EVENT_PUBLISH_FAILED})
+   */
   @Override
   public void publishCancelled(Product product) {
     Long productId = product.getId();
@@ -50,6 +73,11 @@ public class RabbitProductEventPublisher implements ProductEventPublisher {
     }
   }
 
+  /**
+   * ReservationSeat 서비스로 취소 이벤트를 발행한다.
+   *
+   * @param productId 취소된 상품 ID
+   */
   private void publishToReservationSeat(Long productId) {
     ProductCancelledToReservationSeatEvent domainEvent =
         new ProductCancelledToReservationSeatEvent(productId);
@@ -63,6 +91,11 @@ public class RabbitProductEventPublisher implements ProductEventPublisher {
         domainEvent.getRoutingKey());
   }
 
+  /**
+   * Reservation 서비스로 취소 이벤트를 발행한다.
+   *
+   * @param productId 취소된 상품 ID
+   */
   private void publishToReservation(Long productId) {
     ProductCancelledToReservationEvent domainEvent =
         new ProductCancelledToReservationEvent(productId);
@@ -76,6 +109,11 @@ public class RabbitProductEventPublisher implements ProductEventPublisher {
         domainEvent.getRoutingKey());
   }
 
+  /**
+   * Ticket 서비스로 취소 이벤트를 발행한다.
+   *
+   * @param productId 취소된 상품 ID
+   */
   private void publishToTicket(Long productId) {
     ProductCancelledToTicketEvent domainEvent = new ProductCancelledToTicketEvent(productId);
     IntegrationEvent integrationEvent = IntegrationEvent.from(domainEvent, serviceName);

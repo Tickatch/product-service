@@ -21,12 +21,34 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+/**
+ * 상품 엔티티.
+ *
+ * <p>공연, 뮤지컬, 스포츠 등의 상품 정보를 관리하는 애그리거트 루트이다. 상품은 DRAFT 상태로 생성되며, 상태 전이 규칙에 따라 상태가 변경된다.
+ *
+ * <p>상태 전이 규칙:
+ *
+ * <ul>
+ *   <li>DRAFT → PENDING, CANCELLED
+ *   <li>PENDING → DRAFT, ON_SALE, CANCELLED
+ *   <li>ON_SALE → SOLD_OUT, CANCELLED
+ *   <li>SOLD_OUT → ON_SALE, CANCELLED
+ *   <li>CANCELLED → (변경 불가)
+ * </ul>
+ *
+ * @author Tickatch
+ * @since 1.0.0
+ * @see ProductStatus
+ * @see ProductType
+ * @see Schedule
+ */
 @Entity
 @Table(name = "p_product")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Product extends AbstractAuditEntity {
 
+  /** 상품명 최대 길이 */
   private static final int NAME_MAX_LENGTH = 50;
 
   @Id
@@ -63,6 +85,19 @@ public class Product extends AbstractAuditEntity {
     this.status = ProductStatus.DRAFT;
   }
 
+  /**
+   * 상품을 생성한다.
+   *
+   * <p>새 상품은 DRAFT 상태로 생성된다.
+   *
+   * @param name 상품명 (필수, 최대 50자)
+   * @param productType 상품 타입 (필수)
+   * @param runningTime 상영 시간 (필수, 양수)
+   * @param schedule 일정 (필수)
+   * @param stageId 스테이지 ID (필수)
+   * @return 생성된 상품 엔티티
+   * @throws ProductException 유효성 검증 실패 시
+   */
   public static Product create(
       String name, ProductType productType, Integer runningTime, Schedule schedule, Long stageId) {
     validateName(name);
@@ -74,6 +109,16 @@ public class Product extends AbstractAuditEntity {
     return new Product(name, productType, runningTime, schedule, stageId);
   }
 
+  /**
+   * 상품 정보를 수정한다.
+   *
+   * @param name 상품명
+   * @param productType 상품 타입
+   * @param runningTime 상영 시간
+   * @param schedule 일정
+   * @throws ProductException 취소된 상품인 경우 ({@link ProductErrorCode#PRODUCT_ALREADY_CANCELLED})
+   * @throws ProductException 유효성 검증 실패 시
+   */
   public void update(String name, ProductType productType, Integer runningTime, Schedule schedule) {
     validateNotCancelled();
     validateName(name);
@@ -87,6 +132,15 @@ public class Product extends AbstractAuditEntity {
     this.schedule = schedule;
   }
 
+  /**
+   * 스테이지를 변경한다.
+   *
+   * <p>일정이 시작되기 전에만 변경 가능하다.
+   *
+   * @param stageId 변경할 스테이지 ID
+   * @throws ProductException 취소된 상품인 경우 ({@link ProductErrorCode#PRODUCT_ALREADY_CANCELLED})
+   * @throws ProductException 일정이 시작된 경우 ({@link ProductErrorCode#STAGE_CHANGE_NOT_ALLOWED})
+   */
   public void changeStage(Long stageId) {
     validateNotCancelled();
     validateStageId(stageId);
@@ -95,6 +149,14 @@ public class Product extends AbstractAuditEntity {
     this.stageId = stageId;
   }
 
+  /**
+   * 상태를 변경한다.
+   *
+   * @param newStatus 변경할 상태
+   * @throws ProductException 취소된 상품인 경우 ({@link ProductErrorCode#PRODUCT_ALREADY_CANCELLED})
+   * @throws ProductException 상태 전이 규칙 위반 시 ({@link
+   *     ProductErrorCode#PRODUCT_STATUS_CHANGE_NOT_ALLOWED})
+   */
   public void changeStatus(ProductStatus newStatus) {
     validateNotCancelled();
     validateProductStatus(newStatus);
@@ -103,6 +165,14 @@ public class Product extends AbstractAuditEntity {
     this.status = newStatus;
   }
 
+  /**
+   * 상품을 취소한다.
+   *
+   * <p>상품 취소 시 soft delete가 수행된다.
+   *
+   * @param cancelledBy 취소 요청자 ID
+   * @throws ProductException 이미 취소된 상품인 경우 ({@link ProductErrorCode#PRODUCT_ALREADY_CANCELLED})
+   */
   public void cancel(String cancelledBy) {
     if (this.status.isCancelled()) {
       throw new ProductException(ProductErrorCode.PRODUCT_ALREADY_CANCELLED);
@@ -112,30 +182,65 @@ public class Product extends AbstractAuditEntity {
     delete(cancelledBy);
   }
 
+  /**
+   * 시작 일시를 반환한다.
+   *
+   * @return 시작 일시
+   */
   public LocalDateTime getStartAt() {
     return this.schedule.getStartAt();
   }
 
+  /**
+   * 종료 일시를 반환한다.
+   *
+   * @return 종료 일시
+   */
   public LocalDateTime getEndAt() {
     return this.schedule.getEndAt();
   }
 
+  /**
+   * DRAFT 상태 여부를 확인한다.
+   *
+   * @return DRAFT 상태이면 true
+   */
   public boolean isDraft() {
     return this.status.isDraft();
   }
 
+  /**
+   * PENDING 상태 여부를 확인한다.
+   *
+   * @return PENDING 상태이면 true
+   */
   public boolean isPending() {
     return this.status.isPending();
   }
 
+  /**
+   * ON_SALE 상태 여부를 확인한다.
+   *
+   * @return ON_SALE 상태이면 true
+   */
   public boolean isOnSale() {
     return this.status.isOnSale();
   }
 
+  /**
+   * SOLD_OUT 상태 여부를 확인한다.
+   *
+   * @return SOLD_OUT 상태이면 true
+   */
   public boolean isSoldOut() {
     return this.status.isSoldOut();
   }
 
+  /**
+   * CANCELLED 상태 여부를 확인한다.
+   *
+   * @return CANCELLED 상태이면 true
+   */
   public boolean isCancelled() {
     return this.status.isCancelled();
   }
@@ -192,6 +297,11 @@ public class Product extends AbstractAuditEntity {
     }
   }
 
+  /**
+   * 일정이 시작되었는지 검증한다.
+   *
+   * @throws ProductException 일정이 시작된 경우 ({@link ProductErrorCode#STAGE_CHANGE_NOT_ALLOWED})
+   */
   public void validateIsStartedSchedule() {
     if (schedule.isStarted()) {
       throw new ProductException(ProductErrorCode.STAGE_CHANGE_NOT_ALLOWED);

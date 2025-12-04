@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
+import com.tickatch.product_service.product.application.messaging.ProductEventPublisher;
 import com.tickatch.product_service.product.domain.Product;
 import com.tickatch.product_service.product.domain.ProductRepository;
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
@@ -32,6 +33,8 @@ class ProductCommandServiceTest {
   @InjectMocks private ProductCommandService productCommandService;
 
   @Mock private ProductRepository productRepository;
+
+  @Mock private ProductEventPublisher productEventPublisher;
 
   private LocalDateTime startAt;
   private LocalDateTime endAt;
