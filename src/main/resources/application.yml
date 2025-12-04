@@ -10,6 +10,17 @@ spring:
   application:
     name: ${APP_NAME:product-service}  # 서비스명 (Eureka 등록, 로깅, 메트릭에 사용)
 
+
+  # ===== JPA/Hibernate 스키마 설정 =====
+  jpa:
+    properties:
+      hibernate:
+        default_schema: product_service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:tickatch}?currentSchema=product_service
+
+
   # ===== 프로파일 설정 =====
   profiles:
     active: ${APP_PROFILE:local}  # 활성 프로파일 (local, dev, staging, prod)
@@ -17,6 +28,7 @@ spring:
   # ===== docker 설정 =====
   docker:
     compose:
+      file: D:/tickatch/product_service/compose.yml
       lifecycle-management: start_only  # docker 생명 주기 (none, start-only, start-and-stop)
 
   # ===== Config Server 연동 =====

@@ -1,103 +1,145 @@
-﻿# project-interface
+﻿# Tickatch Product Service
 
-## 개요
-이 문서는 [project-interface](https://github.com/tickatch/project-interface) 프로젝트를 기반으로 새로운 서비스 프로젝트를 생성하는 방법을 안내합니다.  
+티켓 예매 플랫폼 **Tickatch**의 상품(공연) 관리 마이크로서비스입니다.
 
-`project-interface`는 Tickatch 서비스 개발 시 공통으로 사용되는 코드, 라이브러리, 설정 등을 포함한 **프로젝트 템플릿** 역할을 합니다.
+## 프로젝트 소개
+
+Tickatch는 콘서트, 뮤지컬, 연극, 스포츠 등 다양한 공연의 티켓 예매를 지원하는 플랫폼입니다. Product Service는 공연 상품의 생성, 수정, 상태 관리를 담당하며, 이벤트 기반 아키텍처를 통해 다른 서비스와 통신합니다.
+
+> 🚧 **MVP 단계** - 현재 핵심 기능 개발 중입니다.
+
+## 기술 스택
+
+| 분류 | 기술 |
+|------|------|
+| Framework | Spring Boot 3.x |
+| Language | Java 17+ |
+| Database | PostgreSQL |
+| Messaging | RabbitMQ |
+| Query | QueryDSL |
+| Communication | OpenFeign |
+| Security | Spring Security |
+
+## 아키텍처
+
+### 시스템 구성
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Tickatch Platform                     │
+├─────────────┬─────────────┬─────────────┬───────────────────┤
+│   Product   │ Reservation │   Ticket    │  ReservationSeat  │
+│   Service   │   Service   │   Service   │      Service      │
+└──────┬──────┴──────┬──────┴──────┬──────┴─────────┬─────────┘
+       │             │             │                │
+       └─────────────┴──────┬──────┴────────────────┘
+                            │
+                      RabbitMQ
+```
+
+### 레이어 구조
+
+```
+product-service/
+├── presentation/       # API 컨트롤러, DTO
+├── application/        # 서비스 레이어 (CQRS)
+│   ├── service/
+│   │   ├── ProductCommandService
+│   │   └── ProductQueryService
+│   └── messaging/      # 이벤트 발행
+├── domain/             # 엔티티, VO, 리포지토리 인터페이스
+│   ├── Product
+│   ├── vo/
+│   │   ├── ProductStatus
+│   │   ├── ProductType
+│   │   └── Schedule
+│   └── ProductRepository
+├── infrastructure/     # 리포지토리 구현, 외부 연동
+└── global/             # 공통 설정, 예외 처리
+```
+
+## 주요 기능
+
+### 상품 관리
+- 상품 생성 / 수정 / 조회 / 취소
+- 스테이지(공연장) 변경
+- 상태 전이 관리
+
+### 상품 타입
+- `CONCERT` - 콘서트
+- `MUSICAL` - 뮤지컬
+- `PLAY` - 연극
+- `SPORTS` - 스포츠
+
+### 상태 흐름
+
+```
+DRAFT ──→ PENDING ──→ ON_SALE ──→ SOLD_OUT
+  │          │           │           │
+  └──────────┴───────────┴───────────┴──→ CANCELLED
+```
+
+| 상태 | 설명 |
+|------|------|
+| DRAFT | 임시저장 (초기 상태) |
+| PENDING | 판매대기 |
+| ON_SALE | 판매중 |
+| SOLD_OUT | 매진 |
+| CANCELLED | 취소됨 (최종 상태) |
+
+## API 명세
+
+### 상품 API
+
+| Method | Endpoint | 설명 | 인증 |
+|--------|----------|------|------|
+| GET | `/api/v1/products` | 상품 목록 조회 | X |
+| GET | `/api/v1/products/{id}` | 상품 상세 조회 | X |
+| POST | `/api/v1/products` | 상품 생성 | O |
+| PUT | `/api/v1/products/{id}` | 상품 수정 | O |
+| PATCH | `/api/v1/products/{id}/stage` | 스테이지 변경 | O |
+| PATCH | `/api/v1/products/{id}/status` | 상태 변경 | O |
+| DELETE | `/api/v1/products/{id}` | 상품 취소 | O |
+
+## 이벤트
+
+상품 취소 시 RabbitMQ를 통해 관련 서비스로 이벤트를 발행합니다.
+
+| 이벤트 | Routing Key | 대상 서비스 |
+|--------|-------------|-------------|
+| ProductCancelledToTicketEvent | `product.cancelled.ticket` | Ticket Service |
+| ProductCancelledToReservationEvent | `product.cancelled.reservation` | Reservation Service |
+| ProductCancelledToReservationSeatEvent | `product.cancelled.reservation-seat` | ReservationSeat Service |
+
+## 실행 방법
+
+### 환경 변수
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/tickatch
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+```
+
+### 실행
+
+```bash
+./gradlew bootRun
+```
+
+## 관련 서비스
+
+- **Reservation Service** - 예매 관리
+- **Ticket Service** - 티켓 발권
+- **ReservationSeat Service** - 좌석 예약
 
 ---
 
-## 템플릿 사용 방법
-템플릿 사용 방법에는 크게 두 가지가 있습니다.
-
-### Github Template 기능 사용
-1. GitHub 페이지에서 Use this template 버튼을 클릭하여 해당 프로젝트를 복제한 새로운 레포지토리를 생성합니다.
-
-2. 해당 프로젝트를 로컬에 클론합니다.
-``` bash
-git clone https://github.com/tickatch/{새로운-서비스-레포}.git
-cd {새로운-서비스-레포}
-```
-
-3. 다음 명령어 또는 IDE를 통해 패키지명 변경
-``` bash
-// 본 예시에서는 이해를 돕기 위해 새로운 패키지명을 ticketservice 로 사용하였습니다.
-// 실제 사용 시에는 새로운 프로젝트의 패키지명을 사용해주시기 바랍니다.
-mv src/main/java/com/tickatch/projectinterface src/main/java/com/tickatch/ticketservice
-find src/main/java/com/tickatch/ticketservice -type f -name "*.java" | xargs sed -i '' 's/package com.tickatch.product_service/package com.tickatch.ticketservice/g'
-find src/main/java/com/tickatch/ticketservice -type f -name "*.java" | xargs sed -i '' 's/import com.tickatch.product_service/import com.tickatch.ticketservice/g'
-
-mv src/test/java/com/tickatch/projectinterface src/test/java/com/tickatch/ticketservice
-find src/test/java/com/tickatch/ticketservice -type f -name "*.java" | xargs sed -i '' 's/package com.tickatch.product_service/package com.tickatch.ticketservice/g'
-find src/test/java/com/tickatch/ticketservice -type f -name "*.java" | xargs sed -i '' 's/import com.tickatch.product_service/import com.tickatch.ticketservice/g'
-```
-
-4. IDE로 어플리케이션 진입점, 각종 환경변수 등을 수정합니다. 필수 수정 항목은 다음과 같습니다.
-- ProjectInterfaceApplication.java
-- build.gradle 의 description
-- settings.gradle 의 rootProject.name
-- application.yml 의 spring.application.name
-- gradle.properties
-- LayeredArchitectureTest 코드 내 패키지명
-- 그 외 project-interface 또는 projectinterface로 되어있는 항목
-
-5. gradle의 spotbugsMain, spotbugsTest, spotlessCheck, test 를 실행하여 프로젝트 문제가 없는지 확인합니다.
-
-### Git Clone 기능 활용
-
-1. GitHub에서 새로운 서비스 레포지토리를 생성합니다. 
-   - 예: `user-service`, `order-service` 등
-     
-2. 다음 명령어 또는 github 페이지의 DownloadZip을 활용해 project-interface를 로컬로 클론합니다.
-
-``` bash
-git clone https://github.com/tickatch/project-interface.git
-cd project-interface
-```
-
-3. 불필요한 Git 히스토리 제거 후 새로운 프로젝트 폴더로 이동
-
-``` bash
-rm -rf .git
-cp -R . <새로운-서비스-레포>
-cd <새로운-서비스-레포>
-```
-
-4. 다음 명령어 또는 IDE를 통해 패키지명 변경
-``` bash
-// 본 예시에서는 이해를 돕기 위해 새로운 패키지명을 ticketservice 로 사용하였습니다.
-// 실제 사용 시에는 새로운 프로젝트의 패키지명을 사용해주시기 바랍니다.
-mv src/main/java/com/tickatch/projectinterface src/main/java/com/tickatch/ticketservice
-find src/main/java/com/tickatch/ticketservice -type f -name "*.java" | xargs sed -i '' 's/package com.tickatch.product_service/package com.tickatch.ticketservice/g'
-find src/main/java/com/tickatch/ticketservice -type f -name "*.java" | xargs sed -i '' 's/import com.tickatch.product_service/import com.tickatch.ticketservice/g'
-
-mv src/test/java/com/tickatch/projectinterface src/test/java/com/tickatch/ticketservice
-find src/test/java/com/tickatch/ticketservice -type f -name "*.java" | xargs sed -i '' 's/package com.tickatch.product_service/package com.tickatch.ticketservice/g'
-find src/test/java/com/tickatch/ticketservice -type f -name "*.java" | xargs sed -i '' 's/import com.tickatch.product_service/import com.tickatch.ticketservice/g'
-```
-
-5. IDE로 어플리케이션 진입점, 각종 환경변수 등을 수정합니다. 필수 수정 항목은 다음과 같습니다.
-- ProjectInterfaceApplication.java
-- build.gradle.kts 의 description
-- settings.gradle.kts 의 rootProject.name
-- application.yml 의 spring.application.name
-- gradle.properties
-- LayeredArchitectureTest 코드 내 패키지명
-- 그 외 project-interface 또는 projectinterface로 되어있는 항목
-
-6. gradle의 spotbugsMain, spotbugsTest, spotlessCheck, test 를 실행하여 프로젝트에 문제가 없는지 확인합니다.
-
-7. 1번에서 만든 레포지토리와 프로젝트를 연결합니다.
-
-``` bash
-// Mac OS 의 경우 다음 파일이 생성되어 있을 수 있어 삭제합니다.
-find . -name '.DS_Store' -type f -delete
-
-git init
-git add .
-git commit -m "Initialize project from project-interface template"
-git branch -M main
-git remote add origin https://github.com/tickatch/<새로운-서비스-레포>.git
-git push -u origin main
-```
-
+© 2025 Tickatch Team
