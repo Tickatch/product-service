@@ -274,19 +274,6 @@ public class Product extends AbstractAuditEntity {
     this.venue = venue;
   }
 
-  /**
-   * 장소 정보를 업데이트한다.
-   *
-   * <p>외부 이벤트로 비정규화 데이터를 동기화할 때 사용한다.
-   *
-   * @param stageName 스테이지명
-   * @param artHallName 아트홀명
-   * @param artHallAddress 아트홀 주소
-   */
-  public void updateVenueInfo(String stageName, String artHallName, String artHallAddress) {
-    this.venue = this.venue.updateInfo(stageName, artHallName, artHallAddress);
-  }
-
   // ========== 좌석 관련 메서드 ==========
 
   /**
