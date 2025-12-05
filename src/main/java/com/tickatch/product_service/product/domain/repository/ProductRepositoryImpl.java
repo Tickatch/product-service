@@ -67,7 +67,8 @@ public class ProductRepositoryImpl implements ProductRepository {
                 nameContains(condition.getName()),
                 productTypeEq(condition.getProductType()),
                 statusEq(condition.getStatus()),
-                stageIdEq(condition.getStageId()))
+                stageIdEq(condition.getStageId()),
+                sellerIdEq(condition.getSellerId()))
             .orderBy(getOrderSpecifiers(pageable.getSort()))
             .offset(pageable.getOffset())
             .limit(pageable.getPageSize())
@@ -82,7 +83,8 @@ public class ProductRepositoryImpl implements ProductRepository {
                 nameContains(condition.getName()),
                 productTypeEq(condition.getProductType()),
                 statusEq(condition.getStatus()),
-                stageIdEq(condition.getStageId()));
+                stageIdEq(condition.getStageId()),
+                sellerIdEq(condition.getSellerId()));
 
     return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
   }
