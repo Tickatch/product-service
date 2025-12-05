@@ -42,19 +42,12 @@ public class RabbitMQConfig {
   public static final String QUEUE_PRODUCT_CANCELLED_RESERVATION =
       "tickatch.product.cancelled.reservation.queue";
 
-  /** Ticket 서비스용 취소 이벤트 큐 이름 */
-  public static final String QUEUE_PRODUCT_CANCELLED_TICKET =
-      "tickatch.product.cancelled.ticket.queue";
-
   /** ReservationSeat 서비스용 라우팅 키 */
   public static final String ROUTING_KEY_CANCELLED_RESERVATION_SEAT =
       "product.cancelled.reservation-seat";
 
   /** Reservation 서비스용 라우팅 키 */
   public static final String ROUTING_KEY_CANCELLED_RESERVATION = "product.cancelled.reservation";
-
-  /** Ticket 서비스용 라우팅 키 */
-  public static final String ROUTING_KEY_CANCELLED_TICKET = "product.cancelled.ticket";
 
   // ========================================
   // Exchange
@@ -104,21 +97,6 @@ public class RabbitMQConfig {
         .build();
   }
 
-  /**
-   * Ticket 서비스용 취소 이벤트 큐를 생성한다.
-   *
-   * <p>메시지 처리 실패 시 DLQ로 이동한다.
-   *
-   * @return DLQ 설정이 포함된 durable Queue
-   */
-  @Bean
-  public Queue productCancelledTicketQueue() {
-    return QueueBuilder.durable(QUEUE_PRODUCT_CANCELLED_TICKET)
-        .withArgument("x-dead-letter-exchange", productExchange + ".dlx")
-        .withArgument("x-dead-letter-routing-key", "dlq." + ROUTING_KEY_CANCELLED_TICKET)
-        .build();
-  }
-
   // ========================================
   // Bindings
   // ========================================
@@ -151,21 +129,6 @@ public class RabbitMQConfig {
     return BindingBuilder.bind(productCancelledReservationQueue)
         .to(productExchange)
         .with(ROUTING_KEY_CANCELLED_RESERVATION);
-  }
-
-  /**
-   * Ticket 큐와 Exchange를 바인딩한다.
-   *
-   * @param productCancelledTicketQueue 바인딩할 큐
-   * @param productExchange 바인딩할 Exchange
-   * @return 라우팅 키로 연결된 Binding
-   */
-  @Bean
-  public Binding productCancelledTicketBinding(
-      Queue productCancelledTicketQueue, TopicExchange productExchange) {
-    return BindingBuilder.bind(productCancelledTicketQueue)
-        .to(productExchange)
-        .with(ROUTING_KEY_CANCELLED_TICKET);
   }
 
   // ========================================
@@ -205,16 +168,6 @@ public class RabbitMQConfig {
   }
 
   /**
-   * Ticket 서비스용 Dead Letter Queue를 생성한다.
-   *
-   * @return durable DLQ
-   */
-  @Bean
-  public Queue deadLetterTicketQueue() {
-    return QueueBuilder.durable(QUEUE_PRODUCT_CANCELLED_TICKET + ".dlq").build();
-  }
-
-  /**
    * ReservationSeat DLQ와 DLX를 바인딩한다.
    *
    * @param deadLetterReservationSeatQueue 바인딩할 DLQ
@@ -242,21 +195,6 @@ public class RabbitMQConfig {
     return BindingBuilder.bind(deadLetterReservationQueue)
         .to(deadLetterExchange)
         .with("dlq." + ROUTING_KEY_CANCELLED_RESERVATION);
-  }
-
-  /**
-   * Ticket DLQ와 DLX를 바인딩한다.
-   *
-   * @param deadLetterTicketQueue 바인딩할 DLQ
-   * @param deadLetterExchange 바인딩할 DLX
-   * @return DLQ Binding
-   */
-  @Bean
-  public Binding deadLetterTicketBinding(
-      Queue deadLetterTicketQueue, TopicExchange deadLetterExchange) {
-    return BindingBuilder.bind(deadLetterTicketQueue)
-        .to(deadLetterExchange)
-        .with("dlq." + ROUTING_KEY_CANCELLED_TICKET);
   }
 
   // ========================================

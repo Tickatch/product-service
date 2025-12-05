@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tickatch.product_service.product.application.messaging.event.ProductCancelledToReservationEvent;
 import com.tickatch.product_service.product.application.messaging.event.ProductCancelledToReservationSeatEvent;
-import com.tickatch.product_service.product.application.messaging.event.ProductCancelledToTicketEvent;
 import io.github.tickatch.common.event.IntegrationEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -105,37 +104,6 @@ public class ProductEventTest {
   }
 
   @Nested
-  class 티켓_서비스_관련_이벤트_테스트 {
-
-    @Test
-    void 이벤트_생성_시_필드가_올바르게_설정된다() {
-      Long productId = 3L;
-
-      ProductCancelledToTicketEvent event = new ProductCancelledToTicketEvent(productId);
-
-      assertThat(event.getProductId()).isEqualTo(productId);
-      assertThat(event.getEventId()).isNotNull();
-      assertThat(event.getEventType()).isEqualTo("ProductCancelledToTicketEvent");
-      assertThat(event.getAggregateId()).isEqualTo("3");
-      assertThat(event.getAggregateType()).isEqualTo("Product");
-      assertThat(event.getRoutingKey()).isEqualTo("product.cancelled.ticket");
-    }
-
-    @Test
-    void IntegrationEvent에서_Payload를_파싱할_수_있다() {
-      Long productId = 3L;
-      ProductCancelledToTicketEvent domainEvent = new ProductCancelledToTicketEvent(productId);
-      IntegrationEvent integrationEvent = IntegrationEvent.from(domainEvent, SOURCE_SERVICE);
-
-      ProductCancelledToTicketEvent parsedEvent =
-          integrationEvent.getPayloadAs(ProductCancelledToTicketEvent.class);
-
-      assertThat(parsedEvent).isNotNull();
-      assertThat(parsedEvent.getProductId()).isEqualTo(productId);
-    }
-  }
-
-  @Nested
   class 모든_이벤트_공통_테스트 {
 
     @Test
@@ -146,14 +114,11 @@ public class ProductEventTest {
           new ProductCancelledToReservationSeatEvent(productId);
       ProductCancelledToReservationEvent reservationEvent =
           new ProductCancelledToReservationEvent(productId);
-      ProductCancelledToTicketEvent ticketEvent = new ProductCancelledToTicketEvent(productId);
 
       assertThat(seatEvent.getRoutingKey()).isEqualTo("product.cancelled.reservation-seat");
       assertThat(reservationEvent.getRoutingKey()).isEqualTo("product.cancelled.reservation");
-      assertThat(ticketEvent.getRoutingKey()).isEqualTo("product.cancelled.ticket");
       assertThat(seatEvent.getProductId()).isEqualTo(productId);
       assertThat(reservationEvent.getProductId()).isEqualTo(productId);
-      assertThat(ticketEvent.getProductId()).isEqualTo(productId);
     }
 
     @Test

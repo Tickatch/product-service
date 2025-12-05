@@ -53,20 +53,19 @@ class RabbitProductEventPublisherTest {
   class publishCancelled관련_테스트 {
 
     @Test
-    void 상품_취소_시_3개_서비스로_이벤트가_발행된다() {
+    void 상품_취소_시_2개_서비스로_이벤트가_발행된다() {
       Product product = createTestProduct(1L);
 
       publisher.publishCancelled(product);
 
-      verify(rabbitTemplate, times(3))
+      verify(rabbitTemplate, times(2))
           .convertAndSend(
               exchangeCaptor.capture(), routingKeyCaptor.capture(), eventCaptor.capture());
       assertThat(exchangeCaptor.getAllValues()).containsOnly(EXCHANGE);
       assertThat(routingKeyCaptor.getAllValues())
           .containsExactly(
               "product.cancelled.reservation-seat",
-              "product.cancelled.reservation",
-              "product.cancelled.ticket");
+              "product.cancelled.reservation");
     }
 
     @Test
@@ -76,7 +75,7 @@ class RabbitProductEventPublisherTest {
 
       publisher.publishCancelled(product);
 
-      verify(rabbitTemplate, times(3))
+      verify(rabbitTemplate, times(2))
           .convertAndSend(any(String.class), any(String.class), eventCaptor.capture());
       for (IntegrationEvent event : eventCaptor.getAllValues()) {
         assertThat(event.getPayload()).contains("\"productId\":123");
@@ -92,14 +91,13 @@ class RabbitProductEventPublisherTest {
 
       publisher.publishCancelled(product);
 
-      verify(rabbitTemplate, times(3))
+      verify(rabbitTemplate, times(2))
           .convertAndSend(any(String.class), any(String.class), eventCaptor.capture());
       assertThat(eventCaptor.getAllValues())
           .extracting(IntegrationEvent::getEventType)
           .containsExactly(
               "ProductCancelledToReservationSeatEvent",
-              "ProductCancelledToReservationEvent",
-              "ProductCancelledToTicketEvent");
+              "ProductCancelledToReservationEvent");
     }
 
     @Test
