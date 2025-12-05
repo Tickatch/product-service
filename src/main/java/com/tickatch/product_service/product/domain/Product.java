@@ -3,9 +3,13 @@ package com.tickatch.product_service.product.domain;
 import com.tickatch.product_service.global.domain.AbstractAuditEntity;
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
 import com.tickatch.product_service.product.domain.exception.ProductException;
+import com.tickatch.product_service.product.domain.vo.ProductStats;
 import com.tickatch.product_service.product.domain.vo.ProductStatus;
 import com.tickatch.product_service.product.domain.vo.ProductType;
+import com.tickatch.product_service.product.domain.vo.SaleSchedule;
 import com.tickatch.product_service.product.domain.vo.Schedule;
+import com.tickatch.product_service.product.domain.vo.SeatSummary;
+import com.tickatch.product_service.product.domain.vo.Venue;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -30,17 +34,26 @@ import lombok.NoArgsConstructor;
  *
  * <ul>
  *   <li>DRAFT → PENDING, CANCELLED
- *   <li>PENDING → DRAFT, ON_SALE, CANCELLED
- *   <li>ON_SALE → SOLD_OUT, CANCELLED
- *   <li>SOLD_OUT → ON_SALE, CANCELLED
- *   <li>CANCELLED → (변경 불가)
+ *   <li>PENDING → APPROVED, REJECTED, CANCELLED
+ *   <li>APPROVED → SCHEDULED, CANCELLED
+ *   <li>REJECTED → DRAFT, CANCELLED
+ *   <li>SCHEDULED → ON_SALE, CANCELLED
+ *   <li>ON_SALE → CLOSED, CANCELLED
+ *   <li>CLOSED → COMPLETED, CANCELLED
+ *   <li>COMPLETED, CANCELLED → (변경 불가)
  * </ul>
+ *
+ * <p>매진 여부는 상태가 아닌 {@code SeatSummary.isSoldOut()}으로 판단한다.
  *
  * @author Tickatch
  * @since 1.0.0
  * @see ProductStatus
  * @see ProductType
  * @see Schedule
+ * @see SaleSchedule
+ * @see Venue
+ * @see SeatSummary
+ * @see ProductStats
  */
 @Entity
 @Table(name = "p_product")
@@ -51,37 +64,77 @@ public class Product extends AbstractAuditEntity {
   /** 상품명 최대 길이 */
   private static final int NAME_MAX_LENGTH = 50;
 
+  /** 반려 사유 최대 길이 */
+  private static final int REJECTION_REASON_MAX_LENGTH = 500;
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id")
   private Long id;
 
+  /** 판매자 ID */
+  @Column(name = "seller_id", nullable = false, length = 50)
+  private String sellerId;
+
+  /** 상품명 */
   @Column(name = "name", nullable = false, length = NAME_MAX_LENGTH)
   private String name;
 
+  /** 상품 타입 */
   @Enumerated(EnumType.STRING)
   @Column(name = "product_type", nullable = false)
   private ProductType productType;
 
+  /** 상영 시간 (분) */
   @Column(name = "running_time", nullable = false)
   private Integer runningTime;
 
-  @Embedded private Schedule schedule;
+  /** 행사 일정 */
+  @Embedded
+  private Schedule schedule;
 
-  @Column(name = "stage_id", nullable = false)
-  private Long stageId;
+  /** 예매 일정 */
+  @Embedded
+  private SaleSchedule saleSchedule;
 
+  /** 장소 정보 */
+  @Embedded
+  private Venue venue;
+
+  /** 좌석 현황 */
+  @Embedded
+  private SeatSummary seatSummary;
+
+  /** 통계 정보 */
+  @Embedded
+  private ProductStats stats;
+
+  /** 반려 사유 */
+  @Column(name = "rejection_reason", length = REJECTION_REASON_MAX_LENGTH)
+  private String rejectionReason;
+
+  /** 상품 상태 */
   @Enumerated(EnumType.STRING)
   @Column(name = "product_status", nullable = false)
   private ProductStatus status;
 
   private Product(
-      String name, ProductType productType, Integer runningTime, Schedule schedule, Long stageId) {
+      String sellerId,
+      String name,
+      ProductType productType,
+      Integer runningTime,
+      Schedule schedule,
+      SaleSchedule saleSchedule,
+      Venue venue) {
+    this.sellerId = sellerId;
     this.name = name;
     this.productType = productType;
     this.runningTime = runningTime;
     this.schedule = schedule;
-    this.stageId = stageId;
+    this.saleSchedule = saleSchedule;
+    this.venue = venue;
+    this.seatSummary = SeatSummary.empty();
+    this.stats = ProductStats.empty();
     this.status = ProductStatus.DRAFT;
   }
 
@@ -90,72 +143,227 @@ public class Product extends AbstractAuditEntity {
    *
    * <p>새 상품은 DRAFT 상태로 생성된다.
    *
+   * @param sellerId 판매자 ID (필수)
    * @param name 상품명 (필수, 최대 50자)
    * @param productType 상품 타입 (필수)
    * @param runningTime 상영 시간 (필수, 양수)
-   * @param schedule 일정 (필수)
-   * @param stageId 스테이지 ID (필수)
+   * @param schedule 행사 일정 (필수)
+   * @param saleSchedule 예매 일정 (필수)
+   * @param venue 장소 정보 (필수)
    * @return 생성된 상품 엔티티
    * @throws ProductException 유효성 검증 실패 시
    */
   public static Product create(
-      String name, ProductType productType, Integer runningTime, Schedule schedule, Long stageId) {
+      String sellerId,
+      String name,
+      ProductType productType,
+      Integer runningTime,
+      Schedule schedule,
+      SaleSchedule saleSchedule,
+      Venue venue) {
+    validateSellerId(sellerId);
     validateName(name);
     validateProductType(productType);
     validateRunningTime(runningTime);
     validateSchedule(schedule);
-    validateStageId(stageId);
+    validateSaleSchedule(saleSchedule);
+    validateVenue(venue);
 
-    return new Product(name, productType, runningTime, schedule, stageId);
+    return new Product(sellerId, name, productType, runningTime, schedule, saleSchedule, venue);
   }
 
   /**
    * 상품 정보를 수정한다.
    *
+   * <p>수정 가능한 상태(DRAFT, REJECTED)에서만 수정 가능하다.
+   *
    * @param name 상품명
    * @param productType 상품 타입
    * @param runningTime 상영 시간
-   * @param schedule 일정
-   * @throws ProductException 취소된 상품인 경우 ({@link ProductErrorCode#PRODUCT_ALREADY_CANCELLED})
+   * @param schedule 행사 일정
+   * @param saleSchedule 예매 일정
+   * @throws ProductException 수정 불가능한 상태인 경우 ({@link ProductErrorCode#PRODUCT_NOT_EDITABLE})
    * @throws ProductException 유효성 검증 실패 시
    */
-  public void update(String name, ProductType productType, Integer runningTime, Schedule schedule) {
-    validateNotCancelled();
+  public void update(
+      String name,
+      ProductType productType,
+      Integer runningTime,
+      Schedule schedule,
+      SaleSchedule saleSchedule) {
+    validateEditable();
     validateName(name);
     validateProductType(productType);
     validateRunningTime(runningTime);
     validateSchedule(schedule);
+    validateSaleSchedule(saleSchedule);
 
     this.name = name;
     this.productType = productType;
     this.runningTime = runningTime;
     this.schedule = schedule;
+    this.saleSchedule = saleSchedule;
+  }
+
+  // ========== 심사 관련 메서드 ==========
+
+  /**
+   * 상품을 승인한다.
+   *
+   * <p>PENDING 상태에서만 승인 가능하다. 승인 후 APPROVED 상태가 된다.
+   *
+   * @throws ProductException PENDING 상태가 아닌 경우 ({@link ProductErrorCode#PRODUCT_NOT_PENDING})
+   */
+  public void approve() {
+    if (!this.status.isPending()) {
+      throw new ProductException(ProductErrorCode.PRODUCT_NOT_PENDING);
+    }
+    this.status = ProductStatus.APPROVED;
   }
 
   /**
-   * 스테이지를 변경한다.
+   * 상품을 반려한다.
    *
-   * <p>일정이 시작되기 전에만 변경 가능하다.
+   * <p>PENDING 상태에서만 반려 가능하다. 반려 후 REJECTED 상태가 된다.
    *
-   * @param stageId 변경할 스테이지 ID
-   * @throws ProductException 취소된 상품인 경우 ({@link ProductErrorCode#PRODUCT_ALREADY_CANCELLED})
-   * @throws ProductException 일정이 시작된 경우 ({@link ProductErrorCode#STAGE_CHANGE_NOT_ALLOWED})
+   * @param reason 반려 사유 (필수)
+   * @throws ProductException PENDING 상태가 아닌 경우 ({@link ProductErrorCode#PRODUCT_NOT_PENDING})
+   * @throws ProductException 반려 사유가 없는 경우 ({@link ProductErrorCode#INVALID_REJECTION_REASON})
    */
-  public void changeStage(Long stageId) {
-    validateNotCancelled();
-    validateStageId(stageId);
-    validateIsStartedSchedule();
+  public void reject(String reason) {
+    if (!this.status.isPending()) {
+      throw new ProductException(ProductErrorCode.PRODUCT_NOT_PENDING);
+    }
+    validateRejectionReason(reason);
 
-    this.stageId = stageId;
+    this.rejectionReason = reason;
+    this.status = ProductStatus.REJECTED;
   }
+
+  /**
+   * 반려된 상품을 재제출한다.
+   *
+   * <p>REJECTED 상태에서만 재제출 가능하다. 재제출 후 DRAFT 상태가 되며 반려 사유가 초기화된다.
+   *
+   * @throws ProductException REJECTED 상태가 아닌 경우 ({@link ProductErrorCode#PRODUCT_NOT_REJECTED})
+   */
+  public void resubmit() {
+    if (!this.status.isRejected()) {
+      throw new ProductException(ProductErrorCode.PRODUCT_NOT_REJECTED);
+    }
+    this.rejectionReason = null;
+    this.status = ProductStatus.DRAFT;
+  }
+
+  // ========== 장소 관련 메서드 ==========
+
+  /**
+   * 장소를 변경한다.
+   *
+   * <p>행사 일정이 시작되기 전에만 변경 가능하다.
+   *
+   * @param venue 변경할 장소 정보
+   * @throws ProductException 취소된 상품인 경우 ({@link ProductErrorCode#PRODUCT_ALREADY_CANCELLED})
+   * @throws ProductException 일정이 시작된 경우 ({@link ProductErrorCode#VENUE_CHANGE_NOT_ALLOWED})
+   */
+  public void changeVenue(Venue venue) {
+    validateNotCancelled();
+    validateVenue(venue);
+    validateBeforeScheduleStart();
+
+    this.venue = venue;
+  }
+
+  /**
+   * 장소 정보를 업데이트한다.
+   *
+   * <p>외부 이벤트로 비정규화 데이터를 동기화할 때 사용한다.
+   *
+   * @param stageName 스테이지명
+   * @param artHallName 아트홀명
+   * @param artHallAddress 아트홀 주소
+   */
+  public void updateVenueInfo(String stageName, String artHallName, String artHallAddress) {
+    this.venue = this.venue.updateInfo(stageName, artHallName, artHallAddress);
+  }
+
+  // ========== 좌석 관련 메서드 ==========
+
+  /**
+   * 좌석 현황을 초기화한다.
+   *
+   * @param totalSeats 총 좌석 수
+   */
+  public void initializeSeatSummary(int totalSeats) {
+    this.seatSummary = SeatSummary.initialize(totalSeats);
+  }
+
+  /**
+   * 잔여 좌석을 차감한다.
+   *
+   * <p>예매 시 호출된다.
+   *
+   * @param count 차감할 좌석 수
+   */
+  public void decreaseAvailableSeats(int count) {
+    this.seatSummary = this.seatSummary.decreaseAvailable(count);
+  }
+
+  /**
+   * 잔여 좌석을 복구한다.
+   *
+   * <p>예매 취소 시 호출된다.
+   *
+   * @param count 복구할 좌석 수
+   */
+  public void increaseAvailableSeats(int count) {
+    this.seatSummary = this.seatSummary.increaseAvailable(count);
+  }
+
+  // ========== 통계 관련 메서드 ==========
+
+  /**
+   * 조회수를 증가한다.
+   */
+  public void incrementViewCount() {
+    this.stats = this.stats.incrementViewCount();
+  }
+
+  /**
+   * 조회수를 동기화한다.
+   *
+   * <p>Redis에서 배치로 동기화할 때 사용한다.
+   *
+   * @param viewCount 동기화할 조회수
+   */
+  public void syncViewCount(Long viewCount) {
+    this.stats = this.stats.syncViewCount(viewCount);
+  }
+
+  /**
+   * 예매 수를 증가한다.
+   */
+  public void incrementReservationCount() {
+    this.stats = this.stats.incrementReservationCount();
+  }
+
+  /**
+   * 예매 수를 감소한다.
+   *
+   * <p>예매 취소 시 호출된다.
+   */
+  public void decrementReservationCount() {
+    this.stats = this.stats.decrementReservationCount();
+  }
+
+  // ========== 상태 관련 메서드 ==========
 
   /**
    * 상태를 변경한다.
    *
    * @param newStatus 변경할 상태
    * @throws ProductException 취소된 상품인 경우 ({@link ProductErrorCode#PRODUCT_ALREADY_CANCELLED})
-   * @throws ProductException 상태 전이 규칙 위반 시 ({@link
-   *     ProductErrorCode#PRODUCT_STATUS_CHANGE_NOT_ALLOWED})
+   * @throws ProductException 상태 전이 규칙 위반 시 ({@link ProductErrorCode#PRODUCT_STATUS_CHANGE_NOT_ALLOWED})
    */
   public void changeStatus(ProductStatus newStatus) {
     validateNotCancelled();
@@ -182,8 +390,42 @@ public class Product extends AbstractAuditEntity {
     delete(cancelledBy);
   }
 
+  // ========== 조회 메서드 ==========
+
   /**
-   * 시작 일시를 반환한다.
+   * 판매자 소유 여부를 확인한다.
+   *
+   * @param sellerId 확인할 판매자 ID
+   * @return 소유자이면 true
+   */
+  public boolean isOwnedBy(String sellerId) {
+    return this.sellerId.equals(sellerId);
+  }
+
+  /**
+   * 구매 가능 여부를 확인한다.
+   *
+   * <p>ON_SALE 상태이고, 예매 기간 중이며, 잔여 좌석이 있으면 구매 가능하다.
+   *
+   * @return 구매 가능하면 true
+   */
+  public boolean canPurchase() {
+    return this.status.isOnSale()
+        && this.saleSchedule.isInSalePeriod()
+        && this.seatSummary.hasAvailableSeats();
+  }
+
+  /**
+   * 매진 여부를 확인한다.
+   *
+   * @return 매진이면 true
+   */
+  public boolean isSoldOut() {
+    return this.seatSummary.isSoldOut();
+  }
+
+  /**
+   * 행사 시작 일시를 반환한다.
    *
    * @return 시작 일시
    */
@@ -192,13 +434,42 @@ public class Product extends AbstractAuditEntity {
   }
 
   /**
-   * 종료 일시를 반환한다.
+   * 행사 종료 일시를 반환한다.
    *
    * @return 종료 일시
    */
   public LocalDateTime getEndAt() {
     return this.schedule.getEndAt();
   }
+
+  /**
+   * 예매 시작 일시를 반환한다.
+   *
+   * @return 예매 시작 일시
+   */
+  public LocalDateTime getSaleStartAt() {
+    return this.saleSchedule.getSaleStartAt();
+  }
+
+  /**
+   * 예매 종료 일시를 반환한다.
+   *
+   * @return 예매 종료 일시
+   */
+  public LocalDateTime getSaleEndAt() {
+    return this.saleSchedule.getSaleEndAt();
+  }
+
+  /**
+   * 스테이지 ID를 반환한다.
+   *
+   * @return 스테이지 ID
+   */
+  public Long getStageId() {
+    return this.venue.getStageId();
+  }
+
+  // ========== 상태 확인 메서드 ==========
 
   /**
    * DRAFT 상태 여부를 확인한다.
@@ -219,6 +490,33 @@ public class Product extends AbstractAuditEntity {
   }
 
   /**
+   * APPROVED 상태 여부를 확인한다.
+   *
+   * @return APPROVED 상태이면 true
+   */
+  public boolean isApproved() {
+    return this.status.isApproved();
+  }
+
+  /**
+   * REJECTED 상태 여부를 확인한다.
+   *
+   * @return REJECTED 상태이면 true
+   */
+  public boolean isRejected() {
+    return this.status.isRejected();
+  }
+
+  /**
+   * SCHEDULED 상태 여부를 확인한다.
+   *
+   * @return SCHEDULED 상태이면 true
+   */
+  public boolean isScheduled() {
+    return this.status.isScheduled();
+  }
+
+  /**
    * ON_SALE 상태 여부를 확인한다.
    *
    * @return ON_SALE 상태이면 true
@@ -228,12 +526,21 @@ public class Product extends AbstractAuditEntity {
   }
 
   /**
-   * SOLD_OUT 상태 여부를 확인한다.
+   * CLOSED 상태 여부를 확인한다.
    *
-   * @return SOLD_OUT 상태이면 true
+   * @return CLOSED 상태이면 true
    */
-  public boolean isSoldOut() {
-    return this.status.isSoldOut();
+  public boolean isClosed() {
+    return this.status.isClosed();
+  }
+
+  /**
+   * COMPLETED 상태 여부를 확인한다.
+   *
+   * @return COMPLETED 상태이면 true
+   */
+  public boolean isCompleted() {
+    return this.status.isCompleted();
   }
 
   /**
@@ -245,9 +552,47 @@ public class Product extends AbstractAuditEntity {
     return this.status.isCancelled();
   }
 
+  /**
+   * 수정 가능한 상태인지 확인한다.
+   *
+   * @return DRAFT 또는 REJECTED 상태이면 true
+   */
+  public boolean isEditable() {
+    return this.status.isEditable();
+  }
+
+  /**
+   * 최종 상태인지 확인한다.
+   *
+   * @return COMPLETED 또는 CANCELLED 상태이면 true
+   */
+  public boolean isTerminal() {
+    return this.status.isTerminal();
+  }
+
+  // ========== 검증 메서드 ==========
+
   private void validateNotCancelled() {
     if (this.status.isCancelled()) {
       throw new ProductException(ProductErrorCode.PRODUCT_ALREADY_CANCELLED);
+    }
+  }
+
+  private void validateEditable() {
+    if (!this.status.isEditable()) {
+      throw new ProductException(ProductErrorCode.PRODUCT_NOT_EDITABLE);
+    }
+  }
+
+  private void validateBeforeScheduleStart() {
+    if (schedule.isStarted()) {
+      throw new ProductException(ProductErrorCode.VENUE_CHANGE_NOT_ALLOWED);
+    }
+  }
+
+  private static void validateSellerId(String sellerId) {
+    if (Objects.isNull(sellerId) || sellerId.isBlank()) {
+      throw new ProductException(ProductErrorCode.INVALID_SELLER_ID);
     }
   }
 
@@ -278,9 +623,24 @@ public class Product extends AbstractAuditEntity {
     }
   }
 
-  private static void validateStageId(Long stageId) {
-    if (Objects.isNull(stageId)) {
-      throw new ProductException(ProductErrorCode.INVALID_STAGE_ID);
+  private static void validateSaleSchedule(SaleSchedule saleSchedule) {
+    if (Objects.isNull(saleSchedule)) {
+      throw new ProductException(ProductErrorCode.INVALID_SALE_SCHEDULE);
+    }
+  }
+
+  private static void validateVenue(Venue venue) {
+    if (Objects.isNull(venue)) {
+      throw new ProductException(ProductErrorCode.INVALID_VENUE);
+    }
+  }
+
+  private static void validateRejectionReason(String reason) {
+    if (Objects.isNull(reason) || reason.isBlank()) {
+      throw new ProductException(ProductErrorCode.INVALID_REJECTION_REASON);
+    }
+    if (reason.length() > REJECTION_REASON_MAX_LENGTH) {
+      throw new ProductException(ProductErrorCode.INVALID_REJECTION_REASON);
     }
   }
 
@@ -294,17 +654,6 @@ public class Product extends AbstractAuditEntity {
     if (!this.status.canChangeTo(newStatus)) {
       throw new ProductException(
           ProductErrorCode.PRODUCT_STATUS_CHANGE_NOT_ALLOWED, this.status.name(), newStatus.name());
-    }
-  }
-
-  /**
-   * 일정이 시작되었는지 검증한다.
-   *
-   * @throws ProductException 일정이 시작된 경우 ({@link ProductErrorCode#STAGE_CHANGE_NOT_ALLOWED})
-   */
-  public void validateIsStartedSchedule() {
-    if (schedule.isStarted()) {
-      throw new ProductException(ProductErrorCode.STAGE_CHANGE_NOT_ALLOWED);
     }
   }
 
