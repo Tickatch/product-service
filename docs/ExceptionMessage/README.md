@@ -31,6 +31,7 @@
 | `PRODUCT_STATUS_CHANGE_NOT_ALLOWED` | 현재 상태({0})에서는 {1} 상태로 변경할 수 없습니다. |
 | `PRODUCT_NOT_PENDING` | 심사 대기 상태가 아닙니다. 승인/반려는 심사 대기 상태에서만 가능합니다. |
 | `PRODUCT_NOT_REJECTED` | 반려 상태가 아닙니다. 재제출은 반려 상태에서만 가능합니다. |
+| `PRODUCT_NOT_EDITABLE` | 수정 가능한 상태가 아닙니다. DRAFT 또는 REJECTED 상태에서만 수정 가능합니다. |
 
 ## 권한 (403)
 
