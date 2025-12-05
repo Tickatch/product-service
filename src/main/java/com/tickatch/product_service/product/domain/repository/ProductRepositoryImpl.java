@@ -133,7 +133,17 @@ public class ProductRepositoryImpl implements ProductRepository {
    * @return 스테이지 ID 일치 조건 (null이면 조건 미적용)
    */
   private BooleanExpression stageIdEq(Long stageId) {
-    return stageId != null ? product.stageId.eq(stageId) : null;
+    return stageId != null ? product.venue.stageId.eq(stageId) : null;
+  }
+
+  /**
+   * 판매자 ID 일치 검색 조건.
+   *
+   * @param sellerId 검색할 판매자 ID
+   * @return 판매자 ID 일치 조건 (null이면 조건 미적용)
+   */
+  private BooleanExpression sellerIdEq(String sellerId) {
+    return StringUtils.hasText(sellerId) ? product.sellerId.eq(sellerId) : null;
   }
 
   /**
