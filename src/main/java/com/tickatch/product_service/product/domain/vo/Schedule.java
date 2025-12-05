@@ -82,12 +82,18 @@ public final class Schedule {
   }
 
   private static void validate(LocalDateTime startAt, LocalDateTime endAt) {
-    if (Objects.isNull(startAt)) {
+    requireNonNull(startAt);
+    requireNonNull(endAt);
+    requireEndAfterStart(startAt, endAt);
+  }
+
+  private static void requireNonNull(LocalDateTime value) {
+    if (Objects.isNull(value)) {
       throw new ProductException(ProductErrorCode.INVALID_SCHEDULE);
     }
-    if (Objects.isNull(endAt)) {
-      throw new ProductException(ProductErrorCode.INVALID_SCHEDULE);
-    }
+  }
+
+  private static void requireEndAfterStart(LocalDateTime startAt, LocalDateTime endAt) {
     if (endAt.isBefore(startAt) || endAt.isEqual(startAt)) {
       throw new ProductException(ProductErrorCode.INVALID_SCHEDULE);
     }
