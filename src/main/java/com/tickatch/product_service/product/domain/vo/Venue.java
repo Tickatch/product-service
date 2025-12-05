@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Venue {
+public final class Venue {
 
   @Column(name = "stage_id", nullable = false)
   private Long stageId;
@@ -43,10 +43,6 @@ public class Venue {
     this.artHallId = artHallId;
     this.artHallName = artHallName;
     this.artHallAddress = artHallAddress;
-  }
-
-  public Venue updateInfo(String stageName, String artHallName, String artHallAddress) {
-    return new Venue(this.stageId, stageName, this.artHallId, artHallName, artHallAddress);
   }
 
   private static void validate(
