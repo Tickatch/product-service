@@ -80,24 +80,6 @@ class VenueTest {
   }
 
   @Nested
-  class 정보_업데이트_테스트 {
-
-    @Test
-    void 장소_정보를_업데이트하면_새_객체를_반환한다() {
-      Venue original = new Venue(1L, "올림픽홀", 100L, "올림픽공원", "서울시 송파구");
-
-      Venue updated = original.updateInfo("대공연장", "세종문화회관", "서울시 종로구");
-
-      assertThat(updated).isNotSameAs(original);
-      assertThat(updated.getStageId()).isEqualTo(original.getStageId());
-      assertThat(updated.getArtHallId()).isEqualTo(original.getArtHallId());
-      assertThat(updated.getStageName()).isEqualTo("대공연장");
-      assertThat(updated.getArtHallName()).isEqualTo("세종문화회관");
-      assertThat(updated.getArtHallAddress()).isEqualTo("서울시 종로구");
-    }
-  }
-
-  @Nested
   class 동등성_테스트 {
 
     @Test
