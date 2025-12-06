@@ -12,7 +12,9 @@ import com.tickatch.product_service.product.domain.repository.dto.ProductRespons
 import com.tickatch.product_service.product.domain.repository.dto.ProductSearchCondition;
 import com.tickatch.product_service.product.domain.vo.ProductStatus;
 import com.tickatch.product_service.product.domain.vo.ProductType;
+import com.tickatch.product_service.product.domain.vo.SaleSchedule;
 import com.tickatch.product_service.product.domain.vo.Schedule;
+import com.tickatch.product_service.product.domain.vo.Venue;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -34,17 +36,31 @@ import org.springframework.test.util.ReflectionTestUtils;
 @DisplayName("ProductQueryService 테스트")
 class ProductQueryServiceTest {
 
+  private static final String DEFAULT_SELLER_ID = "seller-001";
+  private static final String DEFAULT_PRODUCT_NAME = "테스트 공연";
+  private static final ProductType DEFAULT_PRODUCT_TYPE = ProductType.CONCERT;
+  private static final int DEFAULT_RUNNING_TIME = 120;
+  private static final Long DEFAULT_STAGE_ID = 1L;
+  private static final String DEFAULT_STAGE_NAME = "올림픽홀";
+  private static final Long DEFAULT_ART_HALL_ID = 100L;
+  private static final String DEFAULT_ART_HALL_NAME = "올림픽공원";
+  private static final String DEFAULT_ART_HALL_ADDRESS = "서울시 송파구";
+
   @InjectMocks private ProductQueryService productQueryService;
 
   @Mock private ProductRepository productRepository;
 
   private LocalDateTime startAt;
   private LocalDateTime endAt;
+  private LocalDateTime saleStartAt;
+  private LocalDateTime saleEndAt;
 
   @BeforeEach
   void setUp() {
-    startAt = LocalDateTime.now().plusDays(7);
-    endAt = LocalDateTime.now().plusDays(8);
+    startAt = LocalDateTime.now().plusDays(30);
+    endAt = LocalDateTime.now().plusDays(31);
+    saleStartAt = LocalDateTime.now().plusDays(1);
+    saleEndAt = LocalDateTime.now().plusDays(29);
   }
 
   @Nested
@@ -52,28 +68,104 @@ class ProductQueryServiceTest {
 
     @Test
     void ID로_상품을_조회할_수_있다() {
-      Product product = createProduct(1L, "테스트 공연");
+      Product product = createProduct(1L, DEFAULT_PRODUCT_NAME);
       given(productRepository.findById(1L)).willReturn(Optional.of(product));
 
       ProductResponse response = productQueryService.getProduct(1L);
 
       assertThat(response.getId()).isEqualTo(1L);
-      assertThat(response.getName()).isEqualTo("테스트 공연");
-      assertThat(response.getProductType()).isEqualTo(ProductType.CONCERT);
-      assertThat(response.getRunningTime()).isEqualTo(120);
-      assertThat(response.getStageId()).isEqualTo(1L);
+      assertThat(response.getSellerId()).isEqualTo(DEFAULT_SELLER_ID);
+      assertThat(response.getName()).isEqualTo(DEFAULT_PRODUCT_NAME);
+      assertThat(response.getProductType()).isEqualTo(DEFAULT_PRODUCT_TYPE);
+      assertThat(response.getRunningTime()).isEqualTo(DEFAULT_RUNNING_TIME);
+      assertThat(response.getStageId()).isEqualTo(DEFAULT_STAGE_ID);
+      assertThat(response.getStageName()).isEqualTo(DEFAULT_STAGE_NAME);
+      assertThat(response.getArtHallId()).isEqualTo(DEFAULT_ART_HALL_ID);
+      assertThat(response.getArtHallName()).isEqualTo(DEFAULT_ART_HALL_NAME);
+      assertThat(response.getArtHallAddress()).isEqualTo(DEFAULT_ART_HALL_ADDRESS);
       assertThat(response.getStatus()).isEqualTo(ProductStatus.DRAFT);
     }
 
     @Test
     void startAt과_endAt이_정확히_매핑된다() {
-      Product product = createProduct(1L, "테스트 공연");
+      Product product = createProduct(1L, DEFAULT_PRODUCT_NAME);
       given(productRepository.findById(1L)).willReturn(Optional.of(product));
 
       ProductResponse response = productQueryService.getProduct(1L);
 
       assertThat(response.getStartAt()).isEqualTo(startAt);
       assertThat(response.getEndAt()).isEqualTo(endAt);
+    }
+
+    @Test
+    void saleStartAt과_saleEndAt이_정확히_매핑된다() {
+      Product product = createProduct(1L, DEFAULT_PRODUCT_NAME);
+      given(productRepository.findById(1L)).willReturn(Optional.of(product));
+
+      ProductResponse response = productQueryService.getProduct(1L);
+
+      assertThat(response.getSaleStartAt()).isEqualTo(saleStartAt);
+      assertThat(response.getSaleEndAt()).isEqualTo(saleEndAt);
+    }
+
+    @Test
+    void 좌석_현황이_정확히_매핑된다() {
+      Product product = createProduct(1L, DEFAULT_PRODUCT_NAME);
+      product.initializeSeatSummary(100);
+      product.decreaseAvailableSeats(10);
+      given(productRepository.findById(1L)).willReturn(Optional.of(product));
+
+      ProductResponse response = productQueryService.getProduct(1L);
+
+      assertThat(response.getTotalSeats()).isEqualTo(100);
+      assertThat(response.getAvailableSeats()).isEqualTo(90);
+      assertThat(response.isSoldOut()).isFalse();
+    }
+
+    @Test
+    void 통계가_정확히_매핑된다() {
+      Product product = createProduct(1L, DEFAULT_PRODUCT_NAME);
+      product.syncViewCount(1000L);
+      product.incrementReservationCount();
+      given(productRepository.findById(1L)).willReturn(Optional.of(product));
+
+      ProductResponse response = productQueryService.getProduct(1L);
+
+      assertThat(response.getViewCount()).isEqualTo(1000L);
+      assertThat(response.getReservationCount()).isEqualTo(1);
+    }
+
+    @Test
+    void 반려_사유가_정확히_매핑된다() {
+      Product product = createProduct(1L, DEFAULT_PRODUCT_NAME);
+      product.changeStatus(ProductStatus.PENDING);
+      product.reject("내용 부족");
+      given(productRepository.findById(1L)).willReturn(Optional.of(product));
+
+      ProductResponse response = productQueryService.getProduct(1L);
+
+      assertThat(response.getStatus()).isEqualTo(ProductStatus.REJECTED);
+      assertThat(response.getRejectionReason()).isEqualTo("내용 부족");
+    }
+
+    @Test
+    void 구매_가능_여부가_정확히_매핑된다() {
+      Product product = createOnSaleProduct(1L);
+      given(productRepository.findById(1L)).willReturn(Optional.of(product));
+
+      ProductResponse response = productQueryService.getProduct(1L);
+
+      assertThat(response.isPurchasable()).isTrue();
+    }
+
+    @Test
+    void 판매중이_아니면_구매_불가능하다() {
+      Product product = createProduct(1L, DEFAULT_PRODUCT_NAME);
+      given(productRepository.findById(1L)).willReturn(Optional.of(product));
+
+      ProductResponse response = productQueryService.getProduct(1L);
+
+      assertThat(response.isPurchasable()).isFalse();
     }
 
     @Test
@@ -152,10 +244,58 @@ class ProductQueryServiceTest {
     }
   }
 
+  // ========== Helper Methods ==========
+
   private Product createProduct(Long id, String name) {
     Schedule schedule = new Schedule(startAt, endAt);
-    Product product = Product.create(name, ProductType.CONCERT, 120, schedule, 1L);
+    SaleSchedule saleSchedule = new SaleSchedule(saleStartAt, saleEndAt);
+    Venue venue = new Venue(
+        DEFAULT_STAGE_ID,
+        DEFAULT_STAGE_NAME,
+        DEFAULT_ART_HALL_ID,
+        DEFAULT_ART_HALL_NAME,
+        DEFAULT_ART_HALL_ADDRESS);
+
+    Product product = Product.create(
+        DEFAULT_SELLER_ID,
+        name,
+        DEFAULT_PRODUCT_TYPE,
+        DEFAULT_RUNNING_TIME,
+        schedule,
+        saleSchedule,
+        venue);
     ReflectionTestUtils.setField(product, "id", id);
+    return product;
+  }
+
+  private Product createOnSaleProduct(Long id) {
+    // 현재 판매 기간 중인 상품 생성
+    LocalDateTime now = LocalDateTime.now();
+    Schedule schedule = new Schedule(now.plusDays(30), now.plusDays(31));
+    SaleSchedule saleSchedule = new SaleSchedule(now.minusDays(1), now.plusDays(10));
+    Venue venue = new Venue(
+        DEFAULT_STAGE_ID,
+        DEFAULT_STAGE_NAME,
+        DEFAULT_ART_HALL_ID,
+        DEFAULT_ART_HALL_NAME,
+        DEFAULT_ART_HALL_ADDRESS);
+
+    Product product = Product.create(
+        DEFAULT_SELLER_ID,
+        DEFAULT_PRODUCT_NAME,
+        DEFAULT_PRODUCT_TYPE,
+        DEFAULT_RUNNING_TIME,
+        schedule,
+        saleSchedule,
+        venue);
+    ReflectionTestUtils.setField(product, "id", id);
+
+    // ON_SALE 상태로 전이
+    product.changeStatus(ProductStatus.PENDING);
+    product.approve();
+    product.changeStatus(ProductStatus.SCHEDULED);
+    product.changeStatus(ProductStatus.ON_SALE);
+
     return product;
   }
 }
