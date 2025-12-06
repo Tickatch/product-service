@@ -179,4 +179,16 @@ public enum ProductStatus {
   public boolean isTerminal() {
     return this == COMPLETED || this == CANCELLED;
   }
+
+  /**
+   * 구매 가능한 상태인지 확인한다.
+   *
+   * <p>심사 승인 이후 상태(APPROVED, SCHEDULED, ON_SALE, CLOSED)이면 구매 가능하다.
+   * 실제 구매 가능 여부는 {@code Product.canPurchase()}에서 판매 기간과 잔여 좌석을 함께 확인한다.
+   *
+   * @return 구매 가능한 상태이면 true
+   */
+  public boolean canBePurchased() {
+    return this == APPROVED || this == SCHEDULED || this == ON_SALE || this == CLOSED;
+  }
 }
