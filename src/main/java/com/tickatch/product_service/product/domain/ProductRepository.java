@@ -33,6 +33,17 @@ public interface ProductRepository {
   Optional<Product> findById(Long id);
 
   /**
+   * 비관적 쓰기 락을 걸고 상품을 조회한다.
+   *
+   * <p>좌석 차감 등 동시성 제어가 필요한 작업에서 사용한다. 일반 조회(findById)와 달리 트랜잭션 종료 시까지
+   * 다른 트랜잭션의 쓰기 락 요청이 대기한다. 일반 SELECT는 MVCC에 의해 스냅샷 읽기로 대기 없이 진행된다.
+   *
+   * @param id 상품 ID
+   * @return 조회된 상품 (없으면 empty)
+   */
+  Optional<Product> findByIdForUpdate(Long id);
+
+  /**
    * 검색 조건에 맞는 상품 목록을 페이징하여 조회한다.
    *
    * <p>삭제된 상품(deletedAt != null)은 조회되지 않는다.
