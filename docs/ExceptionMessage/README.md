@@ -20,6 +20,9 @@
 | `INVALID_VENUE` | 장소 정보가 유효하지 않습니다. 스테이지 ID, 스테이지명, 아트홀 ID, 아트홀명, 주소는 필수입니다. |
 | `INVALID_SELLER_ID` | 판매자 ID는 필수입니다. |
 | `INVALID_REJECTION_REASON` | 반려 사유는 필수입니다. |
+| `INVALID_SEAT_COUNT` | 좌석 수가 유효하지 않습니다. |
+| `SALE_MUST_START_BEFORE_EVENT` | 예매 시작일은 행사 시작일보다 이전이어야 합니다. |
+| `SALE_MUST_END_BEFORE_EVENT` | 예매 종료일은 행사 시작일보다 이전이어야 합니다. |
 
 ## 비즈니스 규칙 (422)
 
@@ -32,6 +35,7 @@
 | `PRODUCT_NOT_PENDING` | 심사 대기 상태가 아닙니다. 승인/반려는 심사 대기 상태에서만 가능합니다. |
 | `PRODUCT_NOT_REJECTED` | 반려 상태가 아닙니다. 재제출은 반려 상태에서만 가능합니다. |
 | `PRODUCT_NOT_EDITABLE` | 수정 가능한 상태가 아닙니다. DRAFT 또는 REJECTED 상태에서만 수정 가능합니다. |
+| `NOT_ENOUGH_SEATS` | 잔여 좌석이 부족합니다. |
 
 ## 권한 (403)
 
