@@ -12,8 +12,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
  *
  * @param name 상품명 (부분 일치 검색)
  * @param productType 상품 타입 (CONCERT, MUSICAL, SPORTS 등)
- * @param status 상품 상태 (DRAFT, OPEN, CLOSED, CANCELLED)
+ * @param status 상품 상태 (DRAFT, PENDING, APPROVED, ON_SALE 등)
  * @param stageId 스테이지 ID
+ * @param sellerId 판매자 ID
  * @author Tickatch
  * @since 1.0.0
  */
@@ -21,8 +22,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public record ProductSearchRequest(
     @Schema(description = "상품명 (부분 일치)", example = "레미제라블") String name,
     @Schema(description = "상품 타입", example = "MUSICAL") ProductType productType,
-    @Schema(description = "상품 상태", example = "OPEN") ProductStatus status,
-    @Schema(description = "스테이지 ID", example = "1") Long stageId) {
+    @Schema(description = "상품 상태", example = "ON_SALE") ProductStatus status,
+    @Schema(description = "스테이지 ID", example = "1") Long stageId,
+    @Schema(description = "판매자 ID", example = "seller-001") String sellerId) {
 
   /**
    * 검색 요청을 검색 조건 객체로 변환한다.
@@ -35,6 +37,7 @@ public record ProductSearchRequest(
         .productType(productType)
         .status(status)
         .stageId(stageId)
+        .sellerId(sellerId)
         .build();
   }
 }
