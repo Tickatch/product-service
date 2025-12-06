@@ -6,8 +6,9 @@ import com.tickatch.product_service.product.domain.repository.dto.ProductRespons
 import com.tickatch.product_service.product.presentation.api.dto.ProductCreateRequest;
 import com.tickatch.product_service.product.presentation.api.dto.ProductSearchRequest;
 import com.tickatch.product_service.product.presentation.api.dto.ProductUpdateRequest;
-import com.tickatch.product_service.product.presentation.api.dto.StageChangeRequest;
+import com.tickatch.product_service.product.presentation.api.dto.RejectRequest;
 import com.tickatch.product_service.product.presentation.api.dto.StatusChangeRequest;
+import com.tickatch.product_service.product.presentation.api.dto.VenueChangeRequest;
 import io.github.tickatch.common.api.ApiResponse;
 import io.github.tickatch.common.api.PageResponse;
 import io.github.tickatch.common.security.AuthenticatedUser;
@@ -53,10 +54,12 @@ public class ProductApi {
   private final ProductCommandService productCommandService;
   private final ProductQueryService productQueryService;
 
+  // ========== 조회 ==========
+
   /**
    * 상품 목록을 조회한다.
    *
-   * @param request 검색 조건 (상품명, 타입, 상태, 스테이지 ID)
+   * @param request 검색 조건 (상품명, 타입, 상태, 스테이지 ID, 판매자 ID)
    * @param pageable 페이징 정보 (기본값: size=10, sort=createdAt DESC)
    * @return 페이징된 상품 목록
    */
@@ -97,10 +100,12 @@ public class ProductApi {
     return ApiResponse.success(product);
   }
 
+  // ========== 생성/수정 ==========
+
   /**
    * 상품을 생성한다.
    *
-   * @param request 상품 생성 요청 (상품명, 타입, 상영시간, 일정, 스테이지 ID)
+   * @param request 상품 생성 요청
    * @param user 인증된 사용자 정보
    * @return 생성된 상품 ID
    */
@@ -120,12 +125,19 @@ public class ProductApi {
       @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user) {
     Long productId =
         productCommandService.createProduct(
+            user.getUserId(),
             request.name(),
             request.productType(),
             request.runningTime(),
             request.startAt(),
             request.endAt(),
-            request.stageId());
+            request.saleStartAt(),
+            request.saleEndAt(),
+            request.stageId(),
+            request.stageName(),
+            request.artHallId(),
+            request.artHallName(),
+            request.artHallAddress());
     return ApiResponse.success(productId);
   }
 
@@ -133,11 +145,11 @@ public class ProductApi {
    * 상품을 수정한다.
    *
    * @param id 상품 ID
-   * @param request 상품 수정 요청 (상품명, 타입, 상영시간, 일정)
+   * @param request 상품 수정 요청
    * @param user 인증된 사용자 정보
    * @return 빈 응답
    */
-  @Operation(summary = "상품 수정", description = "상품의 기본 정보를 수정한다.")
+  @Operation(summary = "상품 수정", description = "상품의 기본 정보를 수정한다. DRAFT, REJECTED 상태에서만 가능하다.")
   @ApiResponses({
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
         responseCode = "200",
@@ -146,8 +158,14 @@ public class ProductApi {
         responseCode = "400",
         description = "잘못된 요청"),
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "403",
+        description = "소유자가 아님"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
         responseCode = "404",
-        description = "상품을 찾을 수 없음")
+        description = "상품을 찾을 수 없음"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "422",
+        description = "수정 불가 상태")
   })
   @PutMapping("/{id}")
   public ApiResponse<Void> updateProduct(
@@ -156,49 +174,180 @@ public class ProductApi {
       @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user) {
     productCommandService.updateProduct(
         id,
+        user.getUserId(),
         request.name(),
         request.productType(),
         request.runningTime(),
         request.startAt(),
-        request.endAt());
+        request.endAt(),
+        request.saleStartAt(),
+        request.saleEndAt());
     return ApiResponse.success();
   }
 
   /**
-   * 상품의 스테이지를 변경한다.
+   * 상품의 장소를 변경한다.
    *
    * @param id 상품 ID
-   * @param request 스테이지 변경 요청 (스테이지 ID)
+   * @param request 장소 변경 요청
    * @param user 인증된 사용자 정보
    * @return 빈 응답
    */
-  @Operation(summary = "스테이지 변경", description = "상품의 스테이지를 변경한다. 예매 시작 전에만 변경 가능하다.")
+  @Operation(summary = "장소 변경", description = "상품의 공연 장소를 변경한다. 행사 시작 전에만 변경 가능하다.")
   @ApiResponses({
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
         responseCode = "200",
         description = "변경 성공"),
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "403",
+        description = "소유자가 아님"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
         responseCode = "404",
         description = "상품을 찾을 수 없음"),
     @io.swagger.v3.oas.annotations.responses.ApiResponse(
         responseCode = "422",
-        description = "스테이지 변경 불가")
+        description = "장소 변경 불가")
   })
-  @PatchMapping("/{id}/stage")
-  public ApiResponse<Void> changeStage(
+  @PatchMapping("/{id}/venue")
+  public ApiResponse<Void> changeVenue(
       @Parameter(description = "상품 ID", required = true) @PathVariable Long id,
-      @Valid @RequestBody StageChangeRequest request,
+      @Valid @RequestBody VenueChangeRequest request,
       @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user) {
-    productCommandService.changeStage(id, request.stageId());
+    productCommandService.changeVenue(
+        id,
+        user.getUserId(),
+        request.stageId(),
+        request.stageName(),
+        request.artHallId(),
+        request.artHallName(),
+        request.artHallAddress());
     return ApiResponse.success();
   }
+
+  // ========== 심사 ==========
+
+  /**
+   * 상품을 심사에 제출한다.
+   *
+   * @param id 상품 ID
+   * @param user 인증된 사용자 정보
+   * @return 빈 응답
+   */
+  @Operation(summary = "심사 제출", description = "DRAFT 상태의 상품을 심사에 제출한다. 상태가 PENDING으로 변경된다.")
+  @ApiResponses({
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "제출 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "403",
+        description = "소유자가 아님"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "상품을 찾을 수 없음"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "422",
+        description = "제출 불가 상태")
+  })
+  @PostMapping("/{id}/submit")
+  public ApiResponse<Void> submitForApproval(
+      @Parameter(description = "상품 ID", required = true) @PathVariable Long id,
+      @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user) {
+    productCommandService.submitForApproval(id, user.getUserId());
+    return ApiResponse.success();
+  }
+
+  /**
+   * 상품을 승인한다.
+   *
+   * @param id 상품 ID
+   * @return 빈 응답
+   */
+  @Operation(summary = "상품 승인", description = "PENDING 상태의 상품을 승인한다. 상태가 APPROVED로 변경된다.")
+  @ApiResponses({
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "승인 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "상품을 찾을 수 없음"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "422",
+        description = "PENDING 상태가 아님")
+  })
+  @PostMapping("/{id}/approve")
+  public ApiResponse<Void> approveProduct(
+      @Parameter(description = "상품 ID", required = true) @PathVariable Long id) {
+    productCommandService.approveProduct(id);
+    return ApiResponse.success();
+  }
+
+  /**
+   * 상품을 반려한다.
+   *
+   * @param id 상품 ID
+   * @param request 반려 요청 (사유 포함)
+   * @return 빈 응답
+   */
+  @Operation(summary = "상품 반려", description = "PENDING 상태의 상품을 반려한다. 상태가 REJECTED로 변경된다.")
+  @ApiResponses({
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "반려 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "400",
+        description = "반려 사유 누락"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "상품을 찾을 수 없음"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "422",
+        description = "PENDING 상태가 아님")
+  })
+  @PostMapping("/{id}/reject")
+  public ApiResponse<Void> rejectProduct(
+      @Parameter(description = "상품 ID", required = true) @PathVariable Long id,
+      @Valid @RequestBody RejectRequest request) {
+    productCommandService.rejectProduct(id, request.reason());
+    return ApiResponse.success();
+  }
+
+  /**
+   * 반려된 상품을 재제출한다.
+   *
+   * @param id 상품 ID
+   * @param user 인증된 사용자 정보
+   * @return 빈 응답
+   */
+  @Operation(summary = "재제출", description = "REJECTED 상태의 상품을 수정 후 재제출한다. 상태가 DRAFT로 변경된다.")
+  @ApiResponses({
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "재제출 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "403",
+        description = "소유자가 아님"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "상품을 찾을 수 없음"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "422",
+        description = "REJECTED 상태가 아님")
+  })
+  @PostMapping("/{id}/resubmit")
+  public ApiResponse<Void> resubmitProduct(
+      @Parameter(description = "상품 ID", required = true) @PathVariable Long id,
+      @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user) {
+    productCommandService.resubmitProduct(id, user.getUserId());
+    return ApiResponse.success();
+  }
+
+  // ========== 상태 관리 ==========
 
   /**
    * 상품의 상태를 변경한다.
    *
    * @param id 상품 ID
-   * @param request 상태 변경 요청 (상태)
-   * @param user 인증된 사용자 정보
+   * @param request 상태 변경 요청
    * @return 빈 응답
    */
   @Operation(summary = "상태 변경", description = "상품의 상태를 변경한다. 상태 전이 규칙에 따라 유효한 상태로만 변경 가능하다.")
@@ -216,8 +365,7 @@ public class ProductApi {
   @PatchMapping("/{id}/status")
   public ApiResponse<Void> changeStatus(
       @Parameter(description = "상품 ID", required = true) @PathVariable Long id,
-      @Valid @RequestBody StatusChangeRequest request,
-      @Parameter(hidden = true) @AuthenticationPrincipal AuthenticatedUser user) {
+      @Valid @RequestBody StatusChangeRequest request) {
     productCommandService.changeStatus(id, request.status());
     return ApiResponse.success();
   }
