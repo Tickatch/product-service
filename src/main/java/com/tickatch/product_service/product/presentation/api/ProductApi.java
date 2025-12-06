@@ -97,6 +97,7 @@ public class ProductApi {
   public ApiResponse<ProductResponse> getProduct(
       @Parameter(description = "상품 ID", required = true) @PathVariable Long id) {
     var product = productQueryService.getProduct(id);
+    productCommandService.incrementViewCount(id);
     return ApiResponse.success(product);
   }
 

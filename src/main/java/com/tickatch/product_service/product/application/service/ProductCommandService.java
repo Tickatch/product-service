@@ -12,6 +12,7 @@ import com.tickatch.product_service.product.domain.vo.Schedule;
 import com.tickatch.product_service.product.domain.vo.Venue;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -293,6 +294,19 @@ public class ProductCommandService {
   }
 
   // ========== 통계 관련 ==========
+
+  /**
+   * 조회수를 1 증가한다.
+   *
+   * <p>상품 조회 시 비동기로 호출된다.
+   *
+   * @param productId 상품 ID
+   */
+  @Async
+  public void incrementViewCount(Long productId) {
+    productRepository.findById(productId)
+        .ifPresent(Product::incrementViewCount);
+  }
 
   /**
    * 조회수를 동기화한다.
