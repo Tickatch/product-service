@@ -27,6 +27,7 @@ class ProductTest {
   private Schedule futureSchedule;
   private Schedule startedSchedule;
   private SaleSchedule futureSaleSchedule;
+  private SaleSchedule startedSaleSchedule;
   private Venue defaultVenue;
 
   @BeforeEach
@@ -38,6 +39,10 @@ class ProductTest {
 
     futureSaleSchedule = new SaleSchedule(
         LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(29));
+
+    // 이미 시작된 행사용 예매 일정 (이미 종료된 예매)
+    startedSaleSchedule = new SaleSchedule(
+        LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(2));
 
     defaultVenue = new Venue(1L, "올림픽홀", 100L, "올림픽공원", "서울시 송파구");
   }
@@ -291,6 +296,65 @@ class ProductTest {
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_SALE_SCHEDULE);
       }
+
+      @Test
+      void 예매_시작일이_행사_시작일_이후이면_예외가_발생한다() {
+        Schedule eventSchedule = new Schedule(
+            LocalDateTime.now().plusDays(10), LocalDateTime.now().plusDays(11));
+        SaleSchedule invalidSaleSchedule = new SaleSchedule(
+            LocalDateTime.now().plusDays(15), LocalDateTime.now().plusDays(20));
+
+        assertThatThrownBy(() -> Product.create(
+            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
+            eventSchedule, invalidSaleSchedule, defaultVenue))
+            .isInstanceOf(ProductException.class)
+            .extracting(e -> ((ProductException) e).getErrorCode())
+            .isEqualTo(ProductErrorCode.SALE_MUST_START_BEFORE_EVENT);
+      }
+
+      @Test
+      void 예매_시작일이_행사_시작일과_같으면_예외가_발생한다() {
+        LocalDateTime eventStart = LocalDateTime.now().plusDays(10);
+        Schedule eventSchedule = new Schedule(eventStart, eventStart.plusDays(1));
+        SaleSchedule invalidSaleSchedule = new SaleSchedule(eventStart, eventStart.plusHours(12));
+
+        assertThatThrownBy(() -> Product.create(
+            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
+            eventSchedule, invalidSaleSchedule, defaultVenue))
+            .isInstanceOf(ProductException.class)
+            .extracting(e -> ((ProductException) e).getErrorCode())
+            .isEqualTo(ProductErrorCode.SALE_MUST_START_BEFORE_EVENT);
+      }
+
+      @Test
+      void 예매_종료일이_행사_시작일_이후이면_예외가_발생한다() {
+        Schedule eventSchedule = new Schedule(
+            LocalDateTime.now().plusDays(10), LocalDateTime.now().plusDays(11));
+        SaleSchedule invalidSaleSchedule = new SaleSchedule(
+            LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(15));
+
+        assertThatThrownBy(() -> Product.create(
+            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
+            eventSchedule, invalidSaleSchedule, defaultVenue))
+            .isInstanceOf(ProductException.class)
+            .extracting(e -> ((ProductException) e).getErrorCode())
+            .isEqualTo(ProductErrorCode.SALE_MUST_END_BEFORE_EVENT);
+      }
+
+      @Test
+      void 예매_종료일이_행사_시작일과_같으면_예외가_발생한다() {
+        LocalDateTime eventStart = LocalDateTime.now().plusDays(10);
+        Schedule eventSchedule = new Schedule(eventStart, eventStart.plusDays(1));
+        SaleSchedule invalidSaleSchedule = new SaleSchedule(
+            LocalDateTime.now().plusDays(1), eventStart);
+
+        assertThatThrownBy(() -> Product.create(
+            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
+            eventSchedule, invalidSaleSchedule, defaultVenue))
+            .isInstanceOf(ProductException.class)
+            .extracting(e -> ((ProductException) e).getErrorCode())
+            .isEqualTo(ProductErrorCode.SALE_MUST_END_BEFORE_EVENT);
+      }
     }
 
     @Nested
@@ -364,6 +428,21 @@ class ProductTest {
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.PRODUCT_NOT_EDITABLE);
     }
+
+    @Test
+    void 수정시에도_예매_일정_정합성_검증이_적용된다() {
+      Product product = createDefaultProduct();
+      Schedule newSchedule =
+          new Schedule(LocalDateTime.now().plusDays(10), LocalDateTime.now().plusDays(11));
+      SaleSchedule invalidSaleSchedule =
+          new SaleSchedule(LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(15));
+
+      assertThatThrownBy(() -> product.update(
+          "수정된 공연", ProductType.MUSICAL, 150, newSchedule, invalidSaleSchedule))
+          .isInstanceOf(ProductException.class)
+          .extracting(e -> ((ProductException) e).getErrorCode())
+          .isEqualTo(ProductErrorCode.SALE_MUST_END_BEFORE_EVENT);
+    }
   }
 
   @Nested
@@ -384,7 +463,7 @@ class ProductTest {
     void 행사_시작_후에는_장소를_변경할_수_없다() {
       Product product = Product.create(
           DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-          startedSchedule, futureSaleSchedule, defaultVenue);
+          startedSchedule, startedSaleSchedule, defaultVenue);
       Venue newVenue = new Venue(2L, "대공연장", 200L, "세종문화회관", "서울시 종로구");
 
       assertThatThrownBy(() -> product.changeVenue(newVenue))
@@ -581,6 +660,17 @@ class ProductTest {
       product.decreaseAvailableSeats(10);
 
       assertThat(product.isSoldOut()).isTrue();
+    }
+
+    @Test
+    void 잔여_좌석보다_많이_차감하면_예외가_발생한다() {
+      Product product = createDefaultProduct();
+      product.initializeSeatSummary(10);
+
+      assertThatThrownBy(() -> product.decreaseAvailableSeats(20))
+          .isInstanceOf(ProductException.class)
+          .extracting(e -> ((ProductException) e).getErrorCode())
+          .isEqualTo(ProductErrorCode.NOT_ENOUGH_SEATS);
     }
   }
 
