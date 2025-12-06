@@ -168,6 +168,7 @@ public class Product extends AbstractAuditEntity {
     validateSchedule(schedule);
     validateSaleSchedule(saleSchedule);
     validateVenue(venue);
+    validateScheduleConsistency(schedule, saleSchedule);
 
     return new Product(sellerId, name, productType, runningTime, schedule, saleSchedule, venue);
   }
@@ -197,6 +198,7 @@ public class Product extends AbstractAuditEntity {
     validateRunningTime(runningTime);
     validateSchedule(schedule);
     validateSaleSchedule(saleSchedule);
+    validateScheduleConsistency(schedule, saleSchedule);
 
     this.name = name;
     this.productType = productType;
@@ -634,6 +636,17 @@ public class Product extends AbstractAuditEntity {
   private static void validateProductStatus(ProductStatus status) {
     if (Objects.isNull(status)) {
       throw new ProductException(ProductErrorCode.INVALID_PRODUCT_STATUS);
+    }
+  }
+
+  private static void validateScheduleConsistency(Schedule schedule, SaleSchedule saleSchedule) {
+    // 예매 시작일은 행사 시작일보다 이전이어야 함
+    if (!saleSchedule.getSaleStartAt().isBefore(schedule.getStartAt())) {
+      throw new ProductException(ProductErrorCode.SALE_MUST_START_BEFORE_EVENT);
+    }
+    // 예매 종료일은 행사 시작일보다 이전이어야 함
+    if (!saleSchedule.getSaleEndAt().isBefore(schedule.getStartAt())) {
+      throw new ProductException(ProductErrorCode.SALE_MUST_END_BEFORE_EVENT);
     }
   }
 
