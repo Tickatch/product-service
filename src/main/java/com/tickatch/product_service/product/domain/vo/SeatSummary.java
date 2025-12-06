@@ -1,5 +1,7 @@
 package com.tickatch.product_service.product.domain.vo;
 
+import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
+import com.tickatch.product_service.product.domain.exception.ProductException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.time.LocalDateTime;
@@ -10,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Embeddable
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class SeatSummary {
+public final class SeatSummary {
 
   @Column(name = "total_seats")
   private Integer totalSeats;
@@ -22,12 +24,18 @@ public class SeatSummary {
   private LocalDateTime updatedAt;
 
   public SeatSummary(Integer totalSeats, Integer availableSeats) {
-    this.totalSeats = totalSeats != null ? totalSeats : 0;
-    this.availableSeats = availableSeats != null ? availableSeats : 0;
+    int total = totalSeats != null ? totalSeats : 0;
+    int available = availableSeats != null ? availableSeats : 0;
+    validate(total, available);
+    this.totalSeats = total;
+    this.availableSeats = available;
     this.updatedAt = LocalDateTime.now();
   }
 
   public static SeatSummary initialize(int totalSeats) {
+    if (totalSeats < 0) {
+      throw new ProductException(ProductErrorCode.INVALID_SEAT_COUNT);
+    }
     return new SeatSummary(totalSeats, totalSeats);
   }
 
@@ -55,12 +63,32 @@ public class SeatSummary {
   }
 
   public SeatSummary decreaseAvailable(int count) {
-    int newAvailable = Math.max(0, this.availableSeats - count);
-    return new SeatSummary(this.totalSeats, newAvailable);
+    if (count <= 0) {
+      throw new ProductException(ProductErrorCode.INVALID_SEAT_COUNT);
+    }
+    if (this.availableSeats < count) {
+      throw new ProductException(ProductErrorCode.NOT_ENOUGH_SEATS);
+    }
+    return new SeatSummary(this.totalSeats, this.availableSeats - count);
   }
 
   public SeatSummary increaseAvailable(int count) {
+    if (count <= 0) {
+      throw new ProductException(ProductErrorCode.INVALID_SEAT_COUNT);
+    }
     int newAvailable = Math.min(totalSeats, this.availableSeats + count);
     return new SeatSummary(this.totalSeats, newAvailable);
+  }
+
+  private static void validate(int totalSeats, int availableSeats) {
+    if (totalSeats < 0) {
+      throw new ProductException(ProductErrorCode.INVALID_SEAT_COUNT);
+    }
+    if (availableSeats < 0) {
+      throw new ProductException(ProductErrorCode.INVALID_SEAT_COUNT);
+    }
+    if (availableSeats > totalSeats) {
+      throw new ProductException(ProductErrorCode.INVALID_SEAT_COUNT);
+    }
   }
 }
