@@ -32,17 +32,18 @@ class ProductTest {
 
   @BeforeEach
   void setUp() {
-    futureSchedule = new Schedule(LocalDateTime.now().plusDays(30), LocalDateTime.now().plusDays(31));
+    futureSchedule =
+        new Schedule(LocalDateTime.now().plusDays(30), LocalDateTime.now().plusDays(31));
 
     startedSchedule =
         new Schedule(LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
 
-    futureSaleSchedule = new SaleSchedule(
-        LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(29));
+    futureSaleSchedule =
+        new SaleSchedule(LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(29));
 
     // 이미 시작된 행사용 예매 일정 (이미 종료된 예매)
-    startedSaleSchedule = new SaleSchedule(
-        LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(2));
+    startedSaleSchedule =
+        new SaleSchedule(LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(2));
 
     defaultVenue = new Venue(1L, "올림픽홀", 100L, "올림픽공원", "서울시 송파구");
   }
@@ -52,9 +53,15 @@ class ProductTest {
 
     @Test
     void 유효한_정보로_상품을_생성할_수_있다() {
-      Product product = Product.create(
-          DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-          futureSchedule, futureSaleSchedule, defaultVenue);
+      Product product =
+          Product.create(
+              DEFAULT_SELLER_ID,
+              DEFAULT_PRODUCT_NAME,
+              DEFAULT_PRODUCT_TYPE,
+              DEFAULT_RUNNING_TIME,
+              futureSchedule,
+              futureSaleSchedule,
+              defaultVenue);
 
       assertThat(product.getSellerId()).isEqualTo(DEFAULT_SELLER_ID);
       assertThat(product.getName()).isEqualTo(DEFAULT_PRODUCT_NAME);
@@ -100,9 +107,15 @@ class ProductTest {
         LocalDateTime endAt = LocalDateTime.now().plusDays(31);
         Schedule schedule = new Schedule(startAt, endAt);
 
-        Product product = Product.create(
-            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            schedule, futureSaleSchedule, defaultVenue);
+        Product product =
+            Product.create(
+                DEFAULT_SELLER_ID,
+                DEFAULT_PRODUCT_NAME,
+                DEFAULT_PRODUCT_TYPE,
+                DEFAULT_RUNNING_TIME,
+                schedule,
+                futureSaleSchedule,
+                defaultVenue);
 
         assertThat(product.getStartAt()).isEqualTo(startAt);
       }
@@ -113,9 +126,15 @@ class ProductTest {
         LocalDateTime endAt = LocalDateTime.now().plusDays(31);
         Schedule schedule = new Schedule(startAt, endAt);
 
-        Product product = Product.create(
-            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            schedule, futureSaleSchedule, defaultVenue);
+        Product product =
+            Product.create(
+                DEFAULT_SELLER_ID,
+                DEFAULT_PRODUCT_NAME,
+                DEFAULT_PRODUCT_TYPE,
+                DEFAULT_RUNNING_TIME,
+                schedule,
+                futureSaleSchedule,
+                defaultVenue);
 
         assertThat(product.getEndAt()).isEqualTo(endAt);
       }
@@ -140,9 +159,16 @@ class ProductTest {
 
       @Test
       void 판매자_ID가_null이면_ProductException이_발생한다() {
-        assertThatThrownBy(() -> Product.create(
-            null, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            futureSchedule, futureSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        null,
+                        DEFAULT_PRODUCT_NAME,
+                        DEFAULT_PRODUCT_TYPE,
+                        DEFAULT_RUNNING_TIME,
+                        futureSchedule,
+                        futureSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_SELLER_ID);
@@ -150,9 +176,16 @@ class ProductTest {
 
       @Test
       void 판매자_ID가_빈_문자열이면_ProductException이_발생한다() {
-        assertThatThrownBy(() -> Product.create(
-            "", DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            futureSchedule, futureSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        "",
+                        DEFAULT_PRODUCT_NAME,
+                        DEFAULT_PRODUCT_TYPE,
+                        DEFAULT_RUNNING_TIME,
+                        futureSchedule,
+                        futureSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_SELLER_ID);
@@ -160,9 +193,16 @@ class ProductTest {
 
       @Test
       void 판매자_ID가_공백만_있으면_ProductException이_발생한다() {
-        assertThatThrownBy(() -> Product.create(
-            "   ", DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            futureSchedule, futureSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        "   ",
+                        DEFAULT_PRODUCT_NAME,
+                        DEFAULT_PRODUCT_TYPE,
+                        DEFAULT_RUNNING_TIME,
+                        futureSchedule,
+                        futureSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_SELLER_ID);
@@ -174,9 +214,16 @@ class ProductTest {
 
       @Test
       void 상품명이_null이면_ProductException이_발생한다() {
-        assertThatThrownBy(() -> Product.create(
-            DEFAULT_SELLER_ID, null, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            futureSchedule, futureSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        DEFAULT_SELLER_ID,
+                        null,
+                        DEFAULT_PRODUCT_TYPE,
+                        DEFAULT_RUNNING_TIME,
+                        futureSchedule,
+                        futureSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_PRODUCT_NAME);
@@ -184,9 +231,16 @@ class ProductTest {
 
       @Test
       void 상품명이_빈_문자열이면_ProductException이_발생한다() {
-        assertThatThrownBy(() -> Product.create(
-            DEFAULT_SELLER_ID, "", DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            futureSchedule, futureSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        DEFAULT_SELLER_ID,
+                        "",
+                        DEFAULT_PRODUCT_TYPE,
+                        DEFAULT_RUNNING_TIME,
+                        futureSchedule,
+                        futureSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_PRODUCT_NAME);
@@ -194,9 +248,16 @@ class ProductTest {
 
       @Test
       void 상품명이_공백만_있으면_ProductException이_발생한다() {
-        assertThatThrownBy(() -> Product.create(
-            DEFAULT_SELLER_ID, "   ", DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            futureSchedule, futureSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        DEFAULT_SELLER_ID,
+                        "   ",
+                        DEFAULT_PRODUCT_TYPE,
+                        DEFAULT_RUNNING_TIME,
+                        futureSchedule,
+                        futureSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_PRODUCT_NAME);
@@ -206,9 +267,16 @@ class ProductTest {
       void 상품명이_50자를_초과하면_ProductException이_발생한다() {
         String longName = "a".repeat(51);
 
-        assertThatThrownBy(() -> Product.create(
-            DEFAULT_SELLER_ID, longName, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            futureSchedule, futureSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        DEFAULT_SELLER_ID,
+                        longName,
+                        DEFAULT_PRODUCT_TYPE,
+                        DEFAULT_RUNNING_TIME,
+                        futureSchedule,
+                        futureSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_PRODUCT_NAME);
@@ -218,9 +286,15 @@ class ProductTest {
       void 상품명이_정확히_50자이면_생성에_성공한다() {
         String exactName = "a".repeat(50);
 
-        Product product = Product.create(
-            DEFAULT_SELLER_ID, exactName, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            futureSchedule, futureSaleSchedule, defaultVenue);
+        Product product =
+            Product.create(
+                DEFAULT_SELLER_ID,
+                exactName,
+                DEFAULT_PRODUCT_TYPE,
+                DEFAULT_RUNNING_TIME,
+                futureSchedule,
+                futureSaleSchedule,
+                defaultVenue);
 
         assertThat(product.getName()).isEqualTo(exactName);
       }
@@ -231,9 +305,16 @@ class ProductTest {
 
       @Test
       void 상품_타입이_null이면_ProductException이_발생한다() {
-        assertThatThrownBy(() -> Product.create(
-            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, null, DEFAULT_RUNNING_TIME,
-            futureSchedule, futureSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        DEFAULT_SELLER_ID,
+                        DEFAULT_PRODUCT_NAME,
+                        null,
+                        DEFAULT_RUNNING_TIME,
+                        futureSchedule,
+                        futureSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_PRODUCT_TYPE);
@@ -245,9 +326,16 @@ class ProductTest {
 
       @Test
       void 상영_시간이_null이면_ProductException이_발생한다() {
-        assertThatThrownBy(() -> Product.create(
-            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, null,
-            futureSchedule, futureSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        DEFAULT_SELLER_ID,
+                        DEFAULT_PRODUCT_NAME,
+                        DEFAULT_PRODUCT_TYPE,
+                        null,
+                        futureSchedule,
+                        futureSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_RUNNING_TIME);
@@ -255,9 +343,16 @@ class ProductTest {
 
       @Test
       void 상영_시간이_0이면_ProductException이_발생한다() {
-        assertThatThrownBy(() -> Product.create(
-            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, 0,
-            futureSchedule, futureSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        DEFAULT_SELLER_ID,
+                        DEFAULT_PRODUCT_NAME,
+                        DEFAULT_PRODUCT_TYPE,
+                        0,
+                        futureSchedule,
+                        futureSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_RUNNING_TIME);
@@ -265,9 +360,16 @@ class ProductTest {
 
       @Test
       void 상영_시간이_음수이면_ProductException이_발생한다() {
-        assertThatThrownBy(() -> Product.create(
-            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, -1,
-            futureSchedule, futureSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        DEFAULT_SELLER_ID,
+                        DEFAULT_PRODUCT_NAME,
+                        DEFAULT_PRODUCT_TYPE,
+                        -1,
+                        futureSchedule,
+                        futureSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_RUNNING_TIME);
@@ -279,9 +381,16 @@ class ProductTest {
 
       @Test
       void 일정이_null이면_ProductException이_발생한다() {
-        assertThatThrownBy(() -> Product.create(
-            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            null, futureSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        DEFAULT_SELLER_ID,
+                        DEFAULT_PRODUCT_NAME,
+                        DEFAULT_PRODUCT_TYPE,
+                        DEFAULT_RUNNING_TIME,
+                        null,
+                        futureSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_SCHEDULE);
@@ -289,9 +398,16 @@ class ProductTest {
 
       @Test
       void 예매_일정이_null이면_ProductException이_발생한다() {
-        assertThatThrownBy(() -> Product.create(
-            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            futureSchedule, null, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        DEFAULT_SELLER_ID,
+                        DEFAULT_PRODUCT_NAME,
+                        DEFAULT_PRODUCT_TYPE,
+                        DEFAULT_RUNNING_TIME,
+                        futureSchedule,
+                        null,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_SALE_SCHEDULE);
@@ -299,14 +415,21 @@ class ProductTest {
 
       @Test
       void 예매_시작일이_행사_시작일_이후이면_예외가_발생한다() {
-        Schedule eventSchedule = new Schedule(
-            LocalDateTime.now().plusDays(10), LocalDateTime.now().plusDays(11));
-        SaleSchedule invalidSaleSchedule = new SaleSchedule(
-            LocalDateTime.now().plusDays(15), LocalDateTime.now().plusDays(20));
+        Schedule eventSchedule =
+            new Schedule(LocalDateTime.now().plusDays(10), LocalDateTime.now().plusDays(11));
+        SaleSchedule invalidSaleSchedule =
+            new SaleSchedule(LocalDateTime.now().plusDays(15), LocalDateTime.now().plusDays(20));
 
-        assertThatThrownBy(() -> Product.create(
-            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            eventSchedule, invalidSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        DEFAULT_SELLER_ID,
+                        DEFAULT_PRODUCT_NAME,
+                        DEFAULT_PRODUCT_TYPE,
+                        DEFAULT_RUNNING_TIME,
+                        eventSchedule,
+                        invalidSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.SALE_MUST_START_BEFORE_EVENT);
@@ -318,9 +441,16 @@ class ProductTest {
         Schedule eventSchedule = new Schedule(eventStart, eventStart.plusDays(1));
         SaleSchedule invalidSaleSchedule = new SaleSchedule(eventStart, eventStart.plusHours(12));
 
-        assertThatThrownBy(() -> Product.create(
-            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            eventSchedule, invalidSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        DEFAULT_SELLER_ID,
+                        DEFAULT_PRODUCT_NAME,
+                        DEFAULT_PRODUCT_TYPE,
+                        DEFAULT_RUNNING_TIME,
+                        eventSchedule,
+                        invalidSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.SALE_MUST_START_BEFORE_EVENT);
@@ -328,14 +458,21 @@ class ProductTest {
 
       @Test
       void 예매_종료일이_행사_시작일_이후이면_예외가_발생한다() {
-        Schedule eventSchedule = new Schedule(
-            LocalDateTime.now().plusDays(10), LocalDateTime.now().plusDays(11));
-        SaleSchedule invalidSaleSchedule = new SaleSchedule(
-            LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(15));
+        Schedule eventSchedule =
+            new Schedule(LocalDateTime.now().plusDays(10), LocalDateTime.now().plusDays(11));
+        SaleSchedule invalidSaleSchedule =
+            new SaleSchedule(LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(15));
 
-        assertThatThrownBy(() -> Product.create(
-            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            eventSchedule, invalidSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        DEFAULT_SELLER_ID,
+                        DEFAULT_PRODUCT_NAME,
+                        DEFAULT_PRODUCT_TYPE,
+                        DEFAULT_RUNNING_TIME,
+                        eventSchedule,
+                        invalidSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.SALE_MUST_END_BEFORE_EVENT);
@@ -345,12 +482,19 @@ class ProductTest {
       void 예매_종료일이_행사_시작일과_같으면_예외가_발생한다() {
         LocalDateTime eventStart = LocalDateTime.now().plusDays(10);
         Schedule eventSchedule = new Schedule(eventStart, eventStart.plusDays(1));
-        SaleSchedule invalidSaleSchedule = new SaleSchedule(
-            LocalDateTime.now().plusDays(1), eventStart);
+        SaleSchedule invalidSaleSchedule =
+            new SaleSchedule(LocalDateTime.now().plusDays(1), eventStart);
 
-        assertThatThrownBy(() -> Product.create(
-            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            eventSchedule, invalidSaleSchedule, defaultVenue))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        DEFAULT_SELLER_ID,
+                        DEFAULT_PRODUCT_NAME,
+                        DEFAULT_PRODUCT_TYPE,
+                        DEFAULT_RUNNING_TIME,
+                        eventSchedule,
+                        invalidSaleSchedule,
+                        defaultVenue))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.SALE_MUST_END_BEFORE_EVENT);
@@ -362,9 +506,16 @@ class ProductTest {
 
       @Test
       void 장소가_null이면_ProductException이_발생한다() {
-        assertThatThrownBy(() -> Product.create(
-            DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-            futureSchedule, futureSaleSchedule, null))
+        assertThatThrownBy(
+                () ->
+                    Product.create(
+                        DEFAULT_SELLER_ID,
+                        DEFAULT_PRODUCT_NAME,
+                        DEFAULT_PRODUCT_TYPE,
+                        DEFAULT_RUNNING_TIME,
+                        futureSchedule,
+                        futureSaleSchedule,
+                        null))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_VENUE);
@@ -410,8 +561,10 @@ class ProductTest {
       Product product = createDefaultProduct();
       product.changeStatus(ProductStatus.PENDING);
 
-      assertThatThrownBy(() -> product.update(
-          "수정된 공연", ProductType.MUSICAL, 150, futureSchedule, futureSaleSchedule))
+      assertThatThrownBy(
+              () ->
+                  product.update(
+                      "수정된 공연", ProductType.MUSICAL, 150, futureSchedule, futureSaleSchedule))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.PRODUCT_NOT_EDITABLE);
@@ -422,8 +575,10 @@ class ProductTest {
       Product product = createDefaultProduct();
       product.cancel("admin");
 
-      assertThatThrownBy(() -> product.update(
-          "수정된 공연", ProductType.MUSICAL, 150, futureSchedule, futureSaleSchedule))
+      assertThatThrownBy(
+              () ->
+                  product.update(
+                      "수정된 공연", ProductType.MUSICAL, 150, futureSchedule, futureSaleSchedule))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.PRODUCT_NOT_EDITABLE);
@@ -437,8 +592,10 @@ class ProductTest {
       SaleSchedule invalidSaleSchedule =
           new SaleSchedule(LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(15));
 
-      assertThatThrownBy(() -> product.update(
-          "수정된 공연", ProductType.MUSICAL, 150, newSchedule, invalidSaleSchedule))
+      assertThatThrownBy(
+              () ->
+                  product.update(
+                      "수정된 공연", ProductType.MUSICAL, 150, newSchedule, invalidSaleSchedule))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.SALE_MUST_END_BEFORE_EVENT);
@@ -461,9 +618,15 @@ class ProductTest {
 
     @Test
     void 행사_시작_후에는_장소를_변경할_수_없다() {
-      Product product = Product.create(
-          DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-          startedSchedule, startedSaleSchedule, defaultVenue);
+      Product product =
+          Product.create(
+              DEFAULT_SELLER_ID,
+              DEFAULT_PRODUCT_NAME,
+              DEFAULT_PRODUCT_TYPE,
+              DEFAULT_RUNNING_TIME,
+              startedSchedule,
+              startedSaleSchedule,
+              defaultVenue);
       Venue newVenue = new Venue(2L, "대공연장", 200L, "세종문화회관", "서울시 종로구");
 
       assertThatThrownBy(() -> product.changeVenue(newVenue))
@@ -1123,8 +1286,13 @@ class ProductTest {
 
   private Product createDefaultProduct() {
     return Product.create(
-        DEFAULT_SELLER_ID, DEFAULT_PRODUCT_NAME, DEFAULT_PRODUCT_TYPE, DEFAULT_RUNNING_TIME,
-        futureSchedule, futureSaleSchedule, defaultVenue);
+        DEFAULT_SELLER_ID,
+        DEFAULT_PRODUCT_NAME,
+        DEFAULT_PRODUCT_TYPE,
+        DEFAULT_RUNNING_TIME,
+        futureSchedule,
+        futureSaleSchedule,
+        defaultVenue);
   }
 
   private Product createApprovedProduct() {

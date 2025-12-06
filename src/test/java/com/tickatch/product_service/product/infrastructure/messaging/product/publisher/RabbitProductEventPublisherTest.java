@@ -10,7 +10,9 @@ import com.tickatch.product_service.product.domain.Product;
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
 import com.tickatch.product_service.product.domain.exception.ProductException;
 import com.tickatch.product_service.product.domain.vo.ProductType;
+import com.tickatch.product_service.product.domain.vo.SaleSchedule;
 import com.tickatch.product_service.product.domain.vo.Schedule;
+import com.tickatch.product_service.product.domain.vo.Venue;
 import io.github.tickatch.common.event.IntegrationEvent;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,9 +65,7 @@ class RabbitProductEventPublisherTest {
               exchangeCaptor.capture(), routingKeyCaptor.capture(), eventCaptor.capture());
       assertThat(exchangeCaptor.getAllValues()).containsOnly(EXCHANGE);
       assertThat(routingKeyCaptor.getAllValues())
-          .containsExactly(
-              "product.cancelled.reservation-seat",
-              "product.cancelled.reservation");
+          .containsExactly("product.cancelled.reservation-seat", "product.cancelled.reservation");
     }
 
     @Test
@@ -96,8 +96,7 @@ class RabbitProductEventPublisherTest {
       assertThat(eventCaptor.getAllValues())
           .extracting(IntegrationEvent::getEventType)
           .containsExactly(
-              "ProductCancelledToReservationSeatEvent",
-              "ProductCancelledToReservationEvent");
+              "ProductCancelledToReservationSeatEvent", "ProductCancelledToReservationEvent");
     }
 
     @Test
@@ -157,11 +156,21 @@ class RabbitProductEventPublisherTest {
     }
   }
 
+  // ========== Helper Methods ==========
+
   private Product createTestProduct(Long id) {
-    Schedule schedule =
-        new Schedule(
-            LocalDateTime.now().plusDays(30), LocalDateTime.now().plusDays(30).plusHours(2));
-    Product product = Product.create("테스트 공연", ProductType.CONCERT, 120, schedule, 1L);
+    LocalDateTime eventStart = LocalDateTime.now().plusDays(30);
+    LocalDateTime eventEnd = eventStart.plusHours(2);
+    LocalDateTime saleStart = LocalDateTime.now().plusDays(1);
+    LocalDateTime saleEnd = eventStart.minusDays(1);
+
+    Schedule schedule = new Schedule(eventStart, eventEnd);
+    SaleSchedule saleSchedule = new SaleSchedule(saleStart, saleEnd);
+    Venue venue = new Venue(1L, "올림픽홀", 100L, "올림픽공원", "서울시 송파구");
+
+    Product product =
+        Product.create(
+            "seller-001", "테스트 공연", ProductType.CONCERT, 120, schedule, saleSchedule, venue);
     ReflectionTestUtils.setField(product, "id", id);
     return product;
   }

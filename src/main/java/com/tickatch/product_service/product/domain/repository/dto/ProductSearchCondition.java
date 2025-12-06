@@ -29,6 +29,6 @@ public class ProductSearchCondition {
   /** 스테이지 ID */
   private Long stageId;
 
-  /** 판매자 ID*/
+  /** 판매자 ID */
   private String sellerId;
 }

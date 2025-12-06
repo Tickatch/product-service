@@ -71,8 +71,8 @@ public class ProductCommandService {
     SaleSchedule saleSchedule = new SaleSchedule(saleStartAt, saleEndAt);
     Venue venue = new Venue(stageId, stageName, artHallId, artHallName, artHallAddress);
 
-    Product product = Product.create(
-        sellerId, name, productType, runningTime, schedule, saleSchedule, venue);
+    Product product =
+        Product.create(sellerId, name, productType, runningTime, schedule, saleSchedule, venue);
     Product saved = productRepository.save(product);
     return saved.getId();
   }
@@ -155,7 +155,8 @@ public class ProductCommandService {
    * @param sellerId 요청한 판매자 ID
    * @throws ProductException 상품을 찾을 수 없는 경우 ({@link ProductErrorCode#PRODUCT_NOT_FOUND})
    * @throws ProductException 소유자가 아닌 경우 ({@link ProductErrorCode#PRODUCT_NOT_OWNED})
-   * @throws ProductException 상태 변경이 불가능한 경우 ({@link ProductErrorCode#PRODUCT_STATUS_CHANGE_NOT_ALLOWED})
+   * @throws ProductException 상태 변경이 불가능한 경우 ({@link
+   *     ProductErrorCode#PRODUCT_STATUS_CHANGE_NOT_ALLOWED})
    */
   public void submitForApproval(Long productId, String sellerId) {
     Product product = findProductById(productId);
@@ -222,7 +223,8 @@ public class ProductCommandService {
    * @param productId 상품 ID
    * @param newStatus 변경할 상태
    * @throws ProductException 상품을 찾을 수 없는 경우 ({@link ProductErrorCode#PRODUCT_NOT_FOUND})
-   * @throws ProductException 상태 변경이 불가능한 경우 ({@link ProductErrorCode#PRODUCT_STATUS_CHANGE_NOT_ALLOWED})
+   * @throws ProductException 상태 변경이 불가능한 경우 ({@link
+   *     ProductErrorCode#PRODUCT_STATUS_CHANGE_NOT_ALLOWED})
    */
   public void changeStatus(Long productId, ProductStatus newStatus) {
     Product product = findProductById(productId);

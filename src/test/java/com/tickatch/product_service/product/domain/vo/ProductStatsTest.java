@@ -30,7 +30,7 @@ class ProductStatsTest {
       assertThat(stats.getViewCount()).isEqualTo(0L);
       assertThat(stats.getReservationCount()).isEqualTo(0);
     }
-    
+
     @Test
     void 빈_통계_정보를_생성한다() {
       ProductStats stats = ProductStats.empty();
@@ -39,7 +39,7 @@ class ProductStatsTest {
       assertThat(stats.getReservationCount()).isEqualTo(0);
     }
   }
-  
+
   @Nested
   class 조회수_테스트 {
 
@@ -68,7 +68,7 @@ class ProductStatsTest {
 
   @Nested
   class 예매수_테스트 {
-    
+
     @Test
     void 예매수가_증가하면_새_객체를_반환한다() {
       ProductStats original = new ProductStats(100L, 10);
@@ -79,7 +79,7 @@ class ProductStatsTest {
       assertThat(updated.getReservationCount()).isEqualTo(11);
       assertThat(original.getReservationCount()).isEqualTo(10);
     }
-    
+
     @Test
     void 예매수가_감소하면_새_객체를_반환한다() {
       ProductStats original = new ProductStats(100L, 10);

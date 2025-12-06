@@ -74,8 +74,8 @@ class VenueTest {
 
     @Test
     void artHallAddress가_빈_문자열이면_예외를_던진다() {
-        assertThatThrownBy(() -> new Venue(1L, "올림픽홀", 100L, "올림픽공원", "  "))
-            .isInstanceOf(ProductException.class);
+      assertThatThrownBy(() -> new Venue(1L, "올림픽홀", 100L, "올림픽공원", "  "))
+          .isInstanceOf(ProductException.class);
     }
   }
 

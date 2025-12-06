@@ -90,24 +90,19 @@ public class Product extends AbstractAuditEntity {
   private Integer runningTime;
 
   /** 행사 일정 */
-  @Embedded
-  private Schedule schedule;
+  @Embedded private Schedule schedule;
 
   /** 예매 일정 */
-  @Embedded
-  private SaleSchedule saleSchedule;
+  @Embedded private SaleSchedule saleSchedule;
 
   /** 장소 정보 */
-  @Embedded
-  private Venue venue;
+  @Embedded private Venue venue;
 
   /** 좌석 현황 */
-  @Embedded
-  private SeatSummary seatSummary;
+  @Embedded private SeatSummary seatSummary;
 
   /** 통계 정보 */
-  @Embedded
-  private ProductStats stats;
+  @Embedded private ProductStats stats;
 
   /** 반려 사유 */
   @Column(name = "rejection_reason", length = REJECTION_REASON_MAX_LENGTH)
@@ -311,9 +306,7 @@ public class Product extends AbstractAuditEntity {
 
   // ========== 통계 관련 메서드 ==========
 
-  /**
-   * 조회수를 증가한다.
-   */
+  /** 조회수를 증가한다. */
   public void incrementViewCount() {
     this.stats = this.stats.incrementViewCount();
   }
@@ -329,9 +322,7 @@ public class Product extends AbstractAuditEntity {
     this.stats = this.stats.syncViewCount(viewCount);
   }
 
-  /**
-   * 예매 수를 증가한다.
-   */
+  /** 예매 수를 증가한다. */
   public void incrementReservationCount() {
     this.stats = this.stats.incrementReservationCount();
   }
@@ -352,7 +343,8 @@ public class Product extends AbstractAuditEntity {
    *
    * @param newStatus 변경할 상태
    * @throws ProductException 취소된 상품인 경우 ({@link ProductErrorCode#PRODUCT_ALREADY_CANCELLED})
-   * @throws ProductException 상태 전이 규칙 위반 시 ({@link ProductErrorCode#PRODUCT_STATUS_CHANGE_NOT_ALLOWED})
+   * @throws ProductException 상태 전이 규칙 위반 시 ({@link
+   *     ProductErrorCode#PRODUCT_STATUS_CHANGE_NOT_ALLOWED})
    */
   public void changeStatus(ProductStatus newStatus) {
     validateNotCancelled();
@@ -394,8 +386,8 @@ public class Product extends AbstractAuditEntity {
   /**
    * 구매 가능 여부를 확인한다.
    *
-   * <p>심사 승인된 상태(APPROVED 이후)이고, 예매 기간 중이며, 잔여 좌석이 있으면 구매 가능하다.
-   * 상태 전이(ON_SALE)가 늦어지더라도 실제 판매 기간이면 구매 가능하다.
+   * <p>심사 승인된 상태(APPROVED 이후)이고, 예매 기간 중이며, 잔여 좌석이 있으면 구매 가능하다. 상태 전이(ON_SALE)가 늦어지더라도 실제 판매 기간이면
+   * 구매 가능하다.
    *
    * @return 구매 가능하면 true
    */

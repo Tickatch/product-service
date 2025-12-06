@@ -32,11 +32,7 @@ public final class Venue {
   private String artHallAddress;
 
   public Venue(
-      Long stageId,
-      String stageName,
-      Long artHallId,
-      String artHallName,
-      String artHallAddress) {
+      Long stageId, String stageName, Long artHallId, String artHallName, String artHallAddress) {
     validate(stageId, stageName, artHallId, artHallName, artHallAddress);
     this.stageId = stageId;
     this.stageName = stageName;
@@ -46,11 +42,7 @@ public final class Venue {
   }
 
   private static void validate(
-      Long stageId,
-      String stageName,
-      Long artHallId,
-      String artHallName,
-      String artHallAddress) {
+      Long stageId, String stageName, Long artHallId, String artHallName, String artHallAddress) {
     requireNonNull(stageId);
     requireNonNull(artHallId);
     requireNonBlank(stageName);
