@@ -249,21 +249,23 @@ class ProductQueryServiceTest {
   private Product createProduct(Long id, String name) {
     Schedule schedule = new Schedule(startAt, endAt);
     SaleSchedule saleSchedule = new SaleSchedule(saleStartAt, saleEndAt);
-    Venue venue = new Venue(
-        DEFAULT_STAGE_ID,
-        DEFAULT_STAGE_NAME,
-        DEFAULT_ART_HALL_ID,
-        DEFAULT_ART_HALL_NAME,
-        DEFAULT_ART_HALL_ADDRESS);
+    Venue venue =
+        new Venue(
+            DEFAULT_STAGE_ID,
+            DEFAULT_STAGE_NAME,
+            DEFAULT_ART_HALL_ID,
+            DEFAULT_ART_HALL_NAME,
+            DEFAULT_ART_HALL_ADDRESS);
 
-    Product product = Product.create(
-        DEFAULT_SELLER_ID,
-        name,
-        DEFAULT_PRODUCT_TYPE,
-        DEFAULT_RUNNING_TIME,
-        schedule,
-        saleSchedule,
-        venue);
+    Product product =
+        Product.create(
+            DEFAULT_SELLER_ID,
+            name,
+            DEFAULT_PRODUCT_TYPE,
+            DEFAULT_RUNNING_TIME,
+            schedule,
+            saleSchedule,
+            venue);
     ReflectionTestUtils.setField(product, "id", id);
     return product;
   }
@@ -273,22 +275,27 @@ class ProductQueryServiceTest {
     LocalDateTime now = LocalDateTime.now();
     Schedule schedule = new Schedule(now.plusDays(30), now.plusDays(31));
     SaleSchedule saleSchedule = new SaleSchedule(now.minusDays(1), now.plusDays(10));
-    Venue venue = new Venue(
-        DEFAULT_STAGE_ID,
-        DEFAULT_STAGE_NAME,
-        DEFAULT_ART_HALL_ID,
-        DEFAULT_ART_HALL_NAME,
-        DEFAULT_ART_HALL_ADDRESS);
+    Venue venue =
+        new Venue(
+            DEFAULT_STAGE_ID,
+            DEFAULT_STAGE_NAME,
+            DEFAULT_ART_HALL_ID,
+            DEFAULT_ART_HALL_NAME,
+            DEFAULT_ART_HALL_ADDRESS);
 
-    Product product = Product.create(
-        DEFAULT_SELLER_ID,
-        DEFAULT_PRODUCT_NAME,
-        DEFAULT_PRODUCT_TYPE,
-        DEFAULT_RUNNING_TIME,
-        schedule,
-        saleSchedule,
-        venue);
+    Product product =
+        Product.create(
+            DEFAULT_SELLER_ID,
+            DEFAULT_PRODUCT_NAME,
+            DEFAULT_PRODUCT_TYPE,
+            DEFAULT_RUNNING_TIME,
+            schedule,
+            saleSchedule,
+            venue);
     ReflectionTestUtils.setField(product, "id", id);
+
+    // 좌석 초기화 (canPurchase 조건 충족 필요)
+    product.initializeSeatSummary(100);
 
     // ON_SALE 상태로 전이
     product.changeStatus(ProductStatus.PENDING);
