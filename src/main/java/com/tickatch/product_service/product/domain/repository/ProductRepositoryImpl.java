@@ -51,6 +51,12 @@ public class ProductRepositoryImpl implements ProductRepository {
     return productJpaRepository.findById(id);
   }
 
+  /** {@inheritDoc} */
+  @Override
+  public Optional<Product> findByIdForUpdate(Long id) {
+    return productJpaRepository.findByIdForUpdate(id);
+  }
+
   /**
    * {@inheritDoc}
    *
