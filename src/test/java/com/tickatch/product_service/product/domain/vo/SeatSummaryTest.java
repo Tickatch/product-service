@@ -1,7 +1,10 @@
 package com.tickatch.product_service.product.domain.vo;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
+import com.tickatch.product_service.product.domain.exception.ProductException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,7 +16,7 @@ class SeatSummaryTest {
   class 생성_테스트 {
 
     @Test
-    void  좌석_현황을_생성한다() {
+    void 좌석_현황을_생성한다() {
       Integer totalSeats = 100;
       Integer availableSeats = 80;
 
@@ -46,6 +49,42 @@ class SeatSummaryTest {
 
       assertThat(seatSummary.getTotalSeats()).isEqualTo(0);
       assertThat(seatSummary.getAvailableSeats()).isEqualTo(0);
+    }
+  }
+
+  @Nested
+  class 생성_검증_테스트 {
+
+    @Test
+    void 총_좌석이_음수이면_예외가_발생한다() {
+      assertThatThrownBy(() -> new SeatSummary(-1, 0))
+          .isInstanceOf(ProductException.class)
+          .extracting(e -> ((ProductException) e).getErrorCode())
+          .isEqualTo(ProductErrorCode.INVALID_SEAT_COUNT);
+    }
+
+    @Test
+    void 잔여_좌석이_음수이면_예외가_발생한다() {
+      assertThatThrownBy(() -> new SeatSummary(100, -1))
+          .isInstanceOf(ProductException.class)
+          .extracting(e -> ((ProductException) e).getErrorCode())
+          .isEqualTo(ProductErrorCode.INVALID_SEAT_COUNT);
+    }
+
+    @Test
+    void 잔여_좌석이_총_좌석보다_크면_예외가_발생한다() {
+      assertThatThrownBy(() -> new SeatSummary(100, 101))
+          .isInstanceOf(ProductException.class)
+          .extracting(e -> ((ProductException) e).getErrorCode())
+          .isEqualTo(ProductErrorCode.INVALID_SEAT_COUNT);
+    }
+
+    @Test
+    void initialize에서_음수이면_예외가_발생한다() {
+      assertThatThrownBy(() -> SeatSummary.initialize(-1))
+          .isInstanceOf(ProductException.class)
+          .extracting(e -> ((ProductException) e).getErrorCode())
+          .isEqualTo(ProductErrorCode.INVALID_SEAT_COUNT);
     }
   }
 
@@ -95,7 +134,7 @@ class SeatSummaryTest {
   }
 
   @Nested
-  class 좌석_증감_테스트 {
+  class 좌석_차감_테스트 {
 
     @Test
     void 잔여_좌석을_차감하면_새_객체를_반환한다() {
@@ -109,13 +148,48 @@ class SeatSummaryTest {
     }
 
     @Test
-    void 잔여_좌석_차감_시_0_미만이_되지_않는다() {
-      SeatSummary seatSummary = new SeatSummary(100, 5);
+    void 정확히_잔여_좌석만큼_차감하면_매진_상태가_된다() {
+      SeatSummary seatSummary = new SeatSummary(100, 10);
 
       SeatSummary updated = seatSummary.decreaseAvailable(10);
 
       assertThat(updated.getAvailableSeats()).isEqualTo(0);
+      assertThat(updated.isSoldOut()).isTrue();
     }
+
+    @Test
+    void 차감할_수량이_0이면_예외가_발생한다() {
+      SeatSummary seatSummary = new SeatSummary(100, 50);
+
+      assertThatThrownBy(() -> seatSummary.decreaseAvailable(0))
+          .isInstanceOf(ProductException.class)
+          .extracting(e -> ((ProductException) e).getErrorCode())
+          .isEqualTo(ProductErrorCode.INVALID_SEAT_COUNT);
+    }
+
+    @Test
+    void 차감할_수량이_음수이면_예외가_발생한다() {
+      SeatSummary seatSummary = new SeatSummary(100, 50);
+
+      assertThatThrownBy(() -> seatSummary.decreaseAvailable(-1))
+          .isInstanceOf(ProductException.class)
+          .extracting(e -> ((ProductException) e).getErrorCode())
+          .isEqualTo(ProductErrorCode.INVALID_SEAT_COUNT);
+    }
+
+    @Test
+    void 잔여_좌석보다_많이_차감하면_예외가_발생한다() {
+      SeatSummary seatSummary = new SeatSummary(100, 5);
+
+      assertThatThrownBy(() -> seatSummary.decreaseAvailable(10))
+          .isInstanceOf(ProductException.class)
+          .extracting(e -> ((ProductException) e).getErrorCode())
+          .isEqualTo(ProductErrorCode.NOT_ENOUGH_SEATS);
+    }
+  }
+
+  @Nested
+  class 좌석_증가_테스트 {
 
     @Test
     void 잔여_좌석을_증가하면_새_객체를_반환한다() {
@@ -129,7 +203,7 @@ class SeatSummaryTest {
     }
 
     @Test
-    void 잔여_좌석을_증가_시_총_좌석수를_초과하지_않는다() {
+    void 잔여_좌석_증가_시_총_좌석수를_초과하지_않는다() {
       SeatSummary seatSummary = new SeatSummary(100, 95);
 
       SeatSummary updated = seatSummary.increaseAvailable(10);
@@ -137,17 +211,37 @@ class SeatSummaryTest {
       assertThat(updated.getAvailableSeats()).isEqualTo(100);
     }
 
-    @Nested
-    class 동등성_테스트 {
+    @Test
+    void 증가할_수량이_0이면_예외가_발생한다() {
+      SeatSummary seatSummary = new SeatSummary(100, 50);
 
-      @Test
-      void 같은_값을_가진_SeatSummary는_동등하다() {
-        SeatSummary summary1 = new SeatSummary(100, 50);
-        SeatSummary summary2 = new SeatSummary(100, 50);
+      assertThatThrownBy(() -> seatSummary.increaseAvailable(0))
+          .isInstanceOf(ProductException.class)
+          .extracting(e -> ((ProductException) e).getErrorCode())
+          .isEqualTo(ProductErrorCode.INVALID_SEAT_COUNT);
+    }
 
-        assertThat(summary1.getTotalSeats()).isEqualTo(summary2.getTotalSeats());
-        assertThat(summary1.getAvailableSeats()).isEqualTo(summary2.getAvailableSeats());
-      }
+    @Test
+    void 증가할_수량이_음수이면_예외가_발생한다() {
+      SeatSummary seatSummary = new SeatSummary(100, 50);
+
+      assertThatThrownBy(() -> seatSummary.increaseAvailable(-1))
+          .isInstanceOf(ProductException.class)
+          .extracting(e -> ((ProductException) e).getErrorCode())
+          .isEqualTo(ProductErrorCode.INVALID_SEAT_COUNT);
+    }
+  }
+
+  @Nested
+  class 동등성_테스트 {
+
+    @Test
+    void 같은_값을_가진_SeatSummary는_동등하다() {
+      SeatSummary summary1 = new SeatSummary(100, 50);
+      SeatSummary summary2 = new SeatSummary(100, 50);
+
+      assertThat(summary1.getTotalSeats()).isEqualTo(summary2.getTotalSeats());
+      assertThat(summary1.getAvailableSeats()).isEqualTo(summary2.getAvailableSeats());
     }
   }
 }
