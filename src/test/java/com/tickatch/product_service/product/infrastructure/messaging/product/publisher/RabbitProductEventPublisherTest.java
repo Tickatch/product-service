@@ -10,7 +10,9 @@ import com.tickatch.product_service.product.domain.Product;
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
 import com.tickatch.product_service.product.domain.exception.ProductException;
 import com.tickatch.product_service.product.domain.vo.ProductType;
+import com.tickatch.product_service.product.domain.vo.SaleSchedule;
 import com.tickatch.product_service.product.domain.vo.Schedule;
+import com.tickatch.product_service.product.domain.vo.Venue;
 import io.github.tickatch.common.event.IntegrationEvent;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,20 +55,17 @@ class RabbitProductEventPublisherTest {
   class publishCancelled관련_테스트 {
 
     @Test
-    void 상품_취소_시_3개_서비스로_이벤트가_발행된다() {
+    void 상품_취소_시_2개_서비스로_이벤트가_발행된다() {
       Product product = createTestProduct(1L);
 
       publisher.publishCancelled(product);
 
-      verify(rabbitTemplate, times(3))
+      verify(rabbitTemplate, times(2))
           .convertAndSend(
               exchangeCaptor.capture(), routingKeyCaptor.capture(), eventCaptor.capture());
       assertThat(exchangeCaptor.getAllValues()).containsOnly(EXCHANGE);
       assertThat(routingKeyCaptor.getAllValues())
-          .containsExactly(
-              "product.cancelled.reservation-seat",
-              "product.cancelled.reservation",
-              "product.cancelled.ticket");
+          .containsExactly("product.cancelled.reservation-seat", "product.cancelled.reservation");
     }
 
     @Test
@@ -76,7 +75,7 @@ class RabbitProductEventPublisherTest {
 
       publisher.publishCancelled(product);
 
-      verify(rabbitTemplate, times(3))
+      verify(rabbitTemplate, times(2))
           .convertAndSend(any(String.class), any(String.class), eventCaptor.capture());
       for (IntegrationEvent event : eventCaptor.getAllValues()) {
         assertThat(event.getPayload()).contains("\"productId\":123");
@@ -92,14 +91,12 @@ class RabbitProductEventPublisherTest {
 
       publisher.publishCancelled(product);
 
-      verify(rabbitTemplate, times(3))
+      verify(rabbitTemplate, times(2))
           .convertAndSend(any(String.class), any(String.class), eventCaptor.capture());
       assertThat(eventCaptor.getAllValues())
           .extracting(IntegrationEvent::getEventType)
           .containsExactly(
-              "ProductCancelledToReservationSeatEvent",
-              "ProductCancelledToReservationEvent",
-              "ProductCancelledToTicketEvent");
+              "ProductCancelledToReservationSeatEvent", "ProductCancelledToReservationEvent");
     }
 
     @Test
@@ -159,11 +156,21 @@ class RabbitProductEventPublisherTest {
     }
   }
 
+  // ========== Helper Methods ==========
+
   private Product createTestProduct(Long id) {
-    Schedule schedule =
-        new Schedule(
-            LocalDateTime.now().plusDays(30), LocalDateTime.now().plusDays(30).plusHours(2));
-    Product product = Product.create("테스트 공연", ProductType.CONCERT, 120, schedule, 1L);
+    LocalDateTime eventStart = LocalDateTime.now().plusDays(30);
+    LocalDateTime eventEnd = eventStart.plusHours(2);
+    LocalDateTime saleStart = LocalDateTime.now().plusDays(1);
+    LocalDateTime saleEnd = eventStart.minusDays(1);
+
+    Schedule schedule = new Schedule(eventStart, eventEnd);
+    SaleSchedule saleSchedule = new SaleSchedule(saleStart, saleEnd);
+    Venue venue = new Venue(1L, "올림픽홀", 100L, "올림픽공원", "서울시 송파구");
+
+    Product product =
+        Product.create(
+            "seller-001", "테스트 공연", ProductType.CONCERT, 120, schedule, saleSchedule, venue);
     ReflectionTestUtils.setField(product, "id", id);
     return product;
   }

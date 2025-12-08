@@ -22,7 +22,6 @@ import lombok.Getter;
  * @author Tickatch
  * @since 1.0.0
  * @see ProductCancelledToReservationSeatEvent
- * @see ProductCancelledToTicketEvent
  */
 @Getter
 public class ProductCancelledToReservationEvent extends DomainEvent {

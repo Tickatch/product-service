@@ -5,7 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tickatch.product_service.product.domain.repository.dto.ProductSearchCondition;
 import com.tickatch.product_service.product.domain.vo.ProductStatus;
 import com.tickatch.product_service.product.domain.vo.ProductType;
+import com.tickatch.product_service.product.domain.vo.SaleSchedule;
 import com.tickatch.product_service.product.domain.vo.Schedule;
+import com.tickatch.product_service.product.domain.vo.Venue;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,19 +27,34 @@ import org.springframework.transaction.annotation.Transactional;
 @DisplayName("ProductRepository 통합 테스트")
 class ProductRepositoryTest {
 
+  private static final String DEFAULT_SELLER_ID = "seller-001";
+  private static final String OTHER_SELLER_ID = "seller-002";
   private static final int RUNNING_TIME = 120;
   private static final Long STAGE_ID = 1L;
+  private static final String STAGE_NAME = "올림픽홀";
+  private static final Long ART_HALL_ID = 100L;
+  private static final String ART_HALL_NAME = "올림픽공원";
+  private static final String ART_HALL_ADDRESS = "서울시 송파구";
   private static final String PRODUCT_NAME = "테스트 공연";
-  private static final ProductType productType = ProductType.CONCERT;
+  private static final ProductType PRODUCT_TYPE = ProductType.CONCERT;
   private static final Long FAIL_PRODUCT_ID = 999L;
 
   @Autowired private ProductRepository productRepository;
 
   private Schedule futureSchedule;
+  private SaleSchedule futureSaleSchedule;
+  private Venue defaultVenue;
 
   @BeforeEach
   void setUp() {
-    futureSchedule = new Schedule(LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(2));
+    LocalDateTime eventStart = LocalDateTime.now().plusDays(30);
+    LocalDateTime eventEnd = LocalDateTime.now().plusDays(31);
+    LocalDateTime saleStart = LocalDateTime.now().plusDays(1);
+    LocalDateTime saleEnd = LocalDateTime.now().plusDays(29);
+
+    futureSchedule = new Schedule(eventStart, eventEnd);
+    futureSaleSchedule = new SaleSchedule(saleStart, saleEnd);
+    defaultVenue = new Venue(STAGE_ID, STAGE_NAME, ART_HALL_ID, ART_HALL_NAME, ART_HALL_ADDRESS);
   }
 
   @Nested
@@ -45,12 +62,13 @@ class ProductRepositoryTest {
 
     @Test
     void 저장_성공() {
-      Product product = createProduct(PRODUCT_NAME, productType);
+      Product product = createProduct(PRODUCT_NAME, PRODUCT_TYPE);
 
       Product saved = productRepository.save(product);
 
       assertThat(saved.getId()).isNotNull();
       assertThat(saved.getName()).isEqualTo(PRODUCT_NAME);
+      assertThat(saved.getSellerId()).isEqualTo(DEFAULT_SELLER_ID);
     }
   }
 
@@ -59,7 +77,7 @@ class ProductRepositoryTest {
 
     @Test
     void 단일_조회_성공할_수_있다() {
-      Product product = productRepository.save(createProduct(PRODUCT_NAME, productType));
+      Product product = productRepository.save(createProduct(PRODUCT_NAME, PRODUCT_TYPE));
 
       Optional<Product> found = productRepository.findById(product.getId());
 
@@ -73,17 +91,27 @@ class ProductRepositoryTest {
 
       assertThat(found).isEmpty();
     }
+
+    @Test
+    void 비관적_락으로_조회할_수_있다() {
+      Product product = productRepository.save(createProduct(PRODUCT_NAME, PRODUCT_TYPE));
+
+      Optional<Product> found = productRepository.findByIdForUpdate(product.getId());
+
+      assertThat(found).isPresent();
+      assertThat(found.get().getId()).isEqualTo(product.getId());
+    }
   }
 
   @Nested
-  class 조건에_따른_목록_조회_메세드_테스트 {
+  class 조건에_따른_목록_조회_메서드_테스트 {
 
     @BeforeEach
     void 상품들_초기화() {
-      productRepository.save(createProduct("콘서트A", ProductType.CONCERT));
-      productRepository.save(createProduct("콘서트B", ProductType.CONCERT));
-      productRepository.save(createProduct("뮤지컬A", ProductType.MUSICAL));
-      productRepository.save(createProduct("연극A", ProductType.PLAY));
+      productRepository.save(createProduct("콘서트A", ProductType.CONCERT, DEFAULT_SELLER_ID));
+      productRepository.save(createProduct("콘서트B", ProductType.CONCERT, DEFAULT_SELLER_ID));
+      productRepository.save(createProduct("뮤지컬A", ProductType.MUSICAL, OTHER_SELLER_ID));
+      productRepository.save(createProduct("연극A", ProductType.PLAY, OTHER_SELLER_ID));
     }
 
     @Nested
@@ -125,9 +153,11 @@ class ProductRepositoryTest {
 
       @Test
       void 상태로_검색이_가능하다() {
-        Product onSaleProduct = createProduct("판매중 공연", productType);
+        Product onSaleProduct = createProduct("판매중 공연", PRODUCT_TYPE);
         productRepository.save(onSaleProduct);
         onSaleProduct.changeStatus(ProductStatus.PENDING);
+        onSaleProduct.approve();
+        onSaleProduct.changeStatus(ProductStatus.SCHEDULED);
         onSaleProduct.changeStatus(ProductStatus.ON_SALE);
 
         ProductSearchCondition condition =
@@ -141,12 +171,37 @@ class ProductRepositoryTest {
       }
 
       @Test
+      void 판매자ID로_검색이_가능하다() {
+        ProductSearchCondition condition =
+            ProductSearchCondition.builder().sellerId(DEFAULT_SELLER_ID).build();
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Page<Product> result = productRepository.findAllByCondition(condition, pageable);
+
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent()).allMatch(p -> p.getSellerId().equals(DEFAULT_SELLER_ID));
+      }
+
+      @Test
+      void 스테이지ID로_검색이_가능하다() {
+        ProductSearchCondition condition =
+            ProductSearchCondition.builder().stageId(STAGE_ID).build();
+        Pageable pageable = PageRequest.of(0, 10);
+
+        Page<Product> result = productRepository.findAllByCondition(condition, pageable);
+
+        assertThat(result.getContent()).hasSize(4);
+        assertThat(result.getContent()).allMatch(p -> p.getStageId().equals(STAGE_ID));
+      }
+
+      @Test
       void 복합_조건으로_검색이_가능하다() {
         ProductSearchCondition condition =
             ProductSearchCondition.builder()
                 .name("콘서트")
                 .productType(ProductType.CONCERT)
                 .status(ProductStatus.DRAFT)
+                .sellerId(DEFAULT_SELLER_ID)
                 .build();
         Pageable pageable = PageRequest.of(0, 10);
 
@@ -157,7 +212,7 @@ class ProductRepositoryTest {
 
       @Test
       void 삭제된_상품은_조회되지_않는다() {
-        Product deletedProduct = createProduct("삭제된 공연", productType);
+        Product deletedProduct = createProduct("삭제된 공연", PRODUCT_TYPE);
         productRepository.save(deletedProduct);
         deletedProduct.cancel("admin");
         productRepository.save(deletedProduct);
@@ -236,7 +291,14 @@ class ProductRepositoryTest {
     }
   }
 
+  // ========== Helper Methods ==========
+
   private Product createProduct(String name, ProductType type) {
-    return Product.create(name, type, RUNNING_TIME, futureSchedule, STAGE_ID);
+    return createProduct(name, type, DEFAULT_SELLER_ID);
+  }
+
+  private Product createProduct(String name, ProductType type, String sellerId) {
+    return Product.create(
+        sellerId, name, type, RUNNING_TIME, futureSchedule, futureSaleSchedule, defaultVenue);
   }
 }

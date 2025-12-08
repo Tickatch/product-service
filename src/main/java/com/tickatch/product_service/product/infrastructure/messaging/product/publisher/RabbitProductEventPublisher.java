@@ -3,7 +3,6 @@ package com.tickatch.product_service.product.infrastructure.messaging.product.pu
 import com.tickatch.product_service.product.application.messaging.ProductEventPublisher;
 import com.tickatch.product_service.product.application.messaging.event.ProductCancelledToReservationEvent;
 import com.tickatch.product_service.product.application.messaging.event.ProductCancelledToReservationSeatEvent;
-import com.tickatch.product_service.product.application.messaging.event.ProductCancelledToTicketEvent;
 import com.tickatch.product_service.product.domain.Product;
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
 import com.tickatch.product_service.product.domain.exception.ProductException;
@@ -64,7 +63,6 @@ public class RabbitProductEventPublisher implements ProductEventPublisher {
     try {
       publishToReservationSeat(productId);
       publishToReservation(productId);
-      publishToTicket(productId);
 
       log.info("상품 취소 이벤트 발행 완료. productId: {}", productId);
     } catch (Exception e) {
@@ -107,20 +105,5 @@ public class RabbitProductEventPublisher implements ProductEventPublisher {
         "Reservation 취소 이벤트 발행. productId: {}, routingKey: {}",
         productId,
         domainEvent.getRoutingKey());
-  }
-
-  /**
-   * Ticket 서비스로 취소 이벤트를 발행한다.
-   *
-   * @param productId 취소된 상품 ID
-   */
-  private void publishToTicket(Long productId) {
-    ProductCancelledToTicketEvent domainEvent = new ProductCancelledToTicketEvent(productId);
-    IntegrationEvent integrationEvent = IntegrationEvent.from(domainEvent, serviceName);
-
-    rabbitTemplate.convertAndSend(productExchange, domainEvent.getRoutingKey(), integrationEvent);
-
-    log.debug(
-        "Ticket 취소 이벤트 발행. productId: {}, routingKey: {}", productId, domainEvent.getRoutingKey());
   }
 }

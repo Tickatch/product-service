@@ -12,9 +12,14 @@ import jakarta.validation.constraints.NotNull;
  * <p>상태 전이 규칙:
  *
  * <ul>
- *   <li>DRAFT → OPEN (예매 오픈)
- *   <li>OPEN → CLOSED (예매 마감)
- *   <li>DRAFT, OPEN, CLOSED → CANCELLED (취소)
+ *   <li>DRAFT → PENDING (심사 제출)
+ *   <li>PENDING → APPROVED, REJECTED (심사 결과)
+ *   <li>REJECTED → DRAFT (재제출)
+ *   <li>APPROVED → SCHEDULED (예매 예정)
+ *   <li>SCHEDULED → ON_SALE (판매 시작)
+ *   <li>ON_SALE → CLOSED (판매 종료)
+ *   <li>CLOSED → COMPLETED (행사 종료)
+ *   <li>모든 상태 → CANCELLED (취소, cancel API 사용)
  * </ul>
  *
  * @param status 변경할 상태 (필수)
@@ -24,6 +29,9 @@ import jakarta.validation.constraints.NotNull;
  */
 @Schema(description = "상품 상태 변경 요청")
 public record StatusChangeRequest(
-    @Schema(description = "변경할 상태", example = "OPEN", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(
+            description = "변경할 상태",
+            example = "PENDING",
+            requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull(message = "상태는 필수입니다")
         ProductStatus status) {}

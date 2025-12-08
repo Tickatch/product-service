@@ -12,6 +12,7 @@ import com.tickatch.product_service.product.domain.ProductRepository;
 import com.tickatch.product_service.product.domain.repository.dto.ProductSearchCondition;
 import com.tickatch.product_service.product.domain.vo.ProductStatus;
 import com.tickatch.product_service.product.domain.vo.ProductType;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +52,12 @@ public class ProductRepositoryImpl implements ProductRepository {
     return productJpaRepository.findById(id);
   }
 
+  /** {@inheritDoc} */
+  @Override
+  public Optional<Product> findByIdForUpdate(Long id) {
+    return productJpaRepository.findByIdForUpdate(id);
+  }
+
   /**
    * {@inheritDoc}
    *
@@ -67,7 +74,8 @@ public class ProductRepositoryImpl implements ProductRepository {
                 nameContains(condition.getName()),
                 productTypeEq(condition.getProductType()),
                 statusEq(condition.getStatus()),
-                stageIdEq(condition.getStageId()))
+                stageIdEq(condition.getStageId()),
+                sellerIdEq(condition.getSellerId()))
             .orderBy(getOrderSpecifiers(pageable.getSort()))
             .offset(pageable.getOffset())
             .limit(pageable.getPageSize())
@@ -82,7 +90,8 @@ public class ProductRepositoryImpl implements ProductRepository {
                 nameContains(condition.getName()),
                 productTypeEq(condition.getProductType()),
                 statusEq(condition.getStatus()),
-                stageIdEq(condition.getStageId()));
+                stageIdEq(condition.getStageId()),
+                sellerIdEq(condition.getSellerId()));
 
     return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
   }
@@ -133,7 +142,17 @@ public class ProductRepositoryImpl implements ProductRepository {
    * @return 스테이지 ID 일치 조건 (null이면 조건 미적용)
    */
   private BooleanExpression stageIdEq(Long stageId) {
-    return stageId != null ? product.stageId.eq(stageId) : null;
+    return stageId != null ? product.venue.stageId.eq(stageId) : null;
+  }
+
+  /**
+   * 판매자 ID 일치 검색 조건.
+   *
+   * @param sellerId 검색할 판매자 ID
+   * @return 판매자 ID 일치 조건 (null이면 조건 미적용)
+   */
+  private BooleanExpression sellerIdEq(String sellerId) {
+    return StringUtils.hasText(sellerId) ? product.sellerId.eq(sellerId) : null;
   }
 
   /**
@@ -167,5 +186,29 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     return orderSpecifiers.toArray(new OrderSpecifier[0]);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public List<Product> findByStatusAndSaleStartAtBefore(ProductStatus status, LocalDateTime time) {
+    return productJpaRepository.findByStatusAndSaleScheduleSaleStartAtBefore(status, time);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public List<Product> findByStatusAndSaleEndAtBefore(ProductStatus status, LocalDateTime time) {
+    return productJpaRepository.findByStatusAndSaleScheduleSaleEndAtBefore(status, time);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public List<Product> findByStatusAndEndAtBefore(ProductStatus status, LocalDateTime time) {
+    return productJpaRepository.findByStatusAndScheduleEndAtBefore(status, time);
   }
 }

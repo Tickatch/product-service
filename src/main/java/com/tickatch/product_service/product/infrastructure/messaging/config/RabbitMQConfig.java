@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Configuration;
  *
  * <ul>
  *   <li>Exchange: tickatch.product (Topic)
- *   <li>Queue: 서비스별 취소 이벤트 큐 3개 (ReservationSeat, Reservation, Ticket)
+ *   <li>Queue: 서비스별 취소 이벤트 큐 2개 (ReservationSeat, Reservation)
  *   <li>DLQ: 각 큐별 Dead Letter Queue
  * </ul>
  *
@@ -34,6 +34,16 @@ public class RabbitMQConfig {
   @Value("${messaging.exchange.product:tickatch.product}")
   private String productExchange;
 
+  @Value("${messaging.exchange.arthall:tickatch.arthall}")
+  private String arthallExchange;
+
+  @Value("${messaging.exchange.reservation-seat:tickatch.reservation-seat}")
+  private String reservationSeatExchange;
+
+  // ========================================
+  // Queue Names - Product 발행용
+  // ========================================
+
   /** ReservationSeat 서비스용 취소 이벤트 큐 이름 */
   public static final String QUEUE_PRODUCT_CANCELLED_RESERVATION_SEAT =
       "tickatch.product.cancelled.reservation-seat.queue";
@@ -42,9 +52,9 @@ public class RabbitMQConfig {
   public static final String QUEUE_PRODUCT_CANCELLED_RESERVATION =
       "tickatch.product.cancelled.reservation.queue";
 
-  /** Ticket 서비스용 취소 이벤트 큐 이름 */
-  public static final String QUEUE_PRODUCT_CANCELLED_TICKET =
-      "tickatch.product.cancelled.ticket.queue";
+  // ========================================
+  // Routing Keys - Product 발행용
+  // ========================================
 
   /** ReservationSeat 서비스용 라우팅 키 */
   public static final String ROUTING_KEY_CANCELLED_RESERVATION_SEAT =
@@ -53,11 +63,30 @@ public class RabbitMQConfig {
   /** Reservation 서비스용 라우팅 키 */
   public static final String ROUTING_KEY_CANCELLED_RESERVATION = "product.cancelled.reservation";
 
-  /** Ticket 서비스용 라우팅 키 */
-  public static final String ROUTING_KEY_CANCELLED_TICKET = "product.cancelled.ticket";
+  // ========================================
+  // Queue Names - Product 수신용
+  // ========================================
+
+  /** 좌석 예약 이벤트 수신 큐 (from ReservationSeat) */
+  public static final String QUEUE_SEAT_RESERVED_PRODUCT =
+      "tickatch.seat.reserved.product.queue";
+
+  /** 좌석 해제 이벤트 수신 큐 (from ReservationSeat) */
+  public static final String QUEUE_SEAT_RELEASED_PRODUCT =
+      "tickatch.seat.released.product.queue";
 
   // ========================================
-  // Exchange
+  // Routing Keys - Product 수신용
+  // ========================================
+
+  /** 좌석 예약 이벤트 라우팅 키 */
+  public static final String ROUTING_KEY_SEAT_RESERVED = "seat.reserved";
+
+  /** 좌석 해제 이벤트 라우팅 키 */
+  public static final String ROUTING_KEY_SEAT_RELEASED = "seat.released";
+
+  // ========================================
+  // Exchange - Product 발행용
   // ========================================
 
   /**
@@ -71,7 +100,23 @@ public class RabbitMQConfig {
   }
 
   // ========================================
-  // Queues
+  // Exchange - Product 수신용
+  // ========================================
+
+  /**
+   * ReservationSeat 도메인 이벤트용 Topic Exchange를 생성한다.
+   *
+   * <p>ReservationSeat 서비스에서 생성하지만, Product 서비스에서도 바인딩을 위해 선언한다.
+   *
+   * @return durable Topic Exchange
+   */
+  @Bean
+  public TopicExchange reservationSeatExchange() {
+    return ExchangeBuilder.topicExchange(reservationSeatExchange).durable(true).build();
+  }
+
+  // ========================================
+  // Queues - Product 발행용
   // ========================================
 
   /**
@@ -104,23 +149,44 @@ public class RabbitMQConfig {
         .build();
   }
 
+  // ========================================
+  // Queues - Product 수신용
+  // ========================================
+
   /**
-   * Ticket 서비스용 취소 이벤트 큐를 생성한다.
+   * 좌석 예약 이벤트 수신 큐를 생성한다.
    *
-   * <p>메시지 처리 실패 시 DLQ로 이동한다.
+   * <p>ReservationSeat 서비스에서 좌석이 예약되면 이 큐로 메시지가 전달된다.
+   * 메시지 처리 실패 시 DLQ로 이동한다.
    *
    * @return DLQ 설정이 포함된 durable Queue
    */
   @Bean
-  public Queue productCancelledTicketQueue() {
-    return QueueBuilder.durable(QUEUE_PRODUCT_CANCELLED_TICKET)
-        .withArgument("x-dead-letter-exchange", productExchange + ".dlx")
-        .withArgument("x-dead-letter-routing-key", "dlq." + ROUTING_KEY_CANCELLED_TICKET)
+  public Queue seatReservedProductQueue() {
+    return QueueBuilder.durable(QUEUE_SEAT_RESERVED_PRODUCT)
+        .withArgument("x-dead-letter-exchange", reservationSeatExchange + ".dlx")
+        .withArgument("x-dead-letter-routing-key", "dlq." + ROUTING_KEY_SEAT_RESERVED + ".product")
+        .build();
+  }
+
+  /**
+   * 좌석 해제 이벤트 수신 큐를 생성한다.
+   *
+   * <p>ReservationSeat 서비스에서 좌석이 해제되면 이 큐로 메시지가 전달된다.
+   * 메시지 처리 실패 시 DLQ로 이동한다.
+   *
+   * @return DLQ 설정이 포함된 durable Queue
+   */
+  @Bean
+  public Queue seatReleasedProductQueue() {
+    return QueueBuilder.durable(QUEUE_SEAT_RELEASED_PRODUCT)
+        .withArgument("x-dead-letter-exchange", reservationSeatExchange + ".dlx")
+        .withArgument("x-dead-letter-routing-key", "dlq." + ROUTING_KEY_SEAT_RELEASED + ".product")
         .build();
   }
 
   // ========================================
-  // Bindings
+  // Bindings - Product 발행용
   // ========================================
 
   /**
@@ -153,23 +219,46 @@ public class RabbitMQConfig {
         .with(ROUTING_KEY_CANCELLED_RESERVATION);
   }
 
+  // ========================================
+  // Bindings - Product 수신용
+  // ========================================
+
   /**
-   * Ticket 큐와 Exchange를 바인딩한다.
+   * 좌석 예약 이벤트 바인딩.
    *
-   * @param productCancelledTicketQueue 바인딩할 큐
-   * @param productExchange 바인딩할 Exchange
+   * <p>ReservationSeat Exchange의 seat.reserved 라우팅 키를 Product 큐에 바인딩한다.
+   *
+   * @param seatReservedProductQueue 바인딩할 큐
+   * @param reservationSeatExchange 바인딩할 Exchange
    * @return 라우팅 키로 연결된 Binding
    */
   @Bean
-  public Binding productCancelledTicketBinding(
-      Queue productCancelledTicketQueue, TopicExchange productExchange) {
-    return BindingBuilder.bind(productCancelledTicketQueue)
-        .to(productExchange)
-        .with(ROUTING_KEY_CANCELLED_TICKET);
+  public Binding seatReservedProductBinding(
+      Queue seatReservedProductQueue, TopicExchange reservationSeatExchange) {
+    return BindingBuilder.bind(seatReservedProductQueue)
+        .to(reservationSeatExchange)
+        .with(ROUTING_KEY_SEAT_RESERVED);
+  }
+
+  /**
+   * 좌석 해제 이벤트 바인딩.
+   *
+   * <p>ReservationSeat Exchange의 seat.released 라우팅 키를 Product 큐에 바인딩한다.
+   *
+   * @param seatReleasedProductQueue 바인딩할 큐
+   * @param reservationSeatExchange 바인딩할 Exchange
+   * @return 라우팅 키로 연결된 Binding
+   */
+  @Bean
+  public Binding seatReleasedProductBinding(
+      Queue seatReleasedProductQueue, TopicExchange reservationSeatExchange) {
+    return BindingBuilder.bind(seatReleasedProductQueue)
+        .to(reservationSeatExchange)
+        .with(ROUTING_KEY_SEAT_RELEASED);
   }
 
   // ========================================
-  // Dead Letter Exchange & Queues
+  // Dead Letter Exchange & Queues - Product 발행용
   // ========================================
 
   /**
@@ -205,16 +294,6 @@ public class RabbitMQConfig {
   }
 
   /**
-   * Ticket 서비스용 Dead Letter Queue를 생성한다.
-   *
-   * @return durable DLQ
-   */
-  @Bean
-  public Queue deadLetterTicketQueue() {
-    return QueueBuilder.durable(QUEUE_PRODUCT_CANCELLED_TICKET + ".dlq").build();
-  }
-
-  /**
    * ReservationSeat DLQ와 DLX를 바인딩한다.
    *
    * @param deadLetterReservationSeatQueue 바인딩할 DLQ
@@ -244,19 +323,70 @@ public class RabbitMQConfig {
         .with("dlq." + ROUTING_KEY_CANCELLED_RESERVATION);
   }
 
+  // ========================================
+  // Dead Letter Exchange & Queues - Product 수신용
+  // ========================================
+
   /**
-   * Ticket DLQ와 DLX를 바인딩한다.
+   * ReservationSeat Dead Letter Exchange를 생성한다.
    *
-   * @param deadLetterTicketQueue 바인딩할 DLQ
-   * @param deadLetterExchange 바인딩할 DLX
+   * <p>ReservationSeat 서비스에서 생성하지만, Product 서비스에서도 DLQ 바인딩을 위해 선언한다.
+   *
+   * @return DLX용 Topic Exchange
+   */
+  @Bean
+  public TopicExchange reservationSeatDeadLetterExchange() {
+    return ExchangeBuilder.topicExchange(reservationSeatExchange + ".dlx").durable(true).build();
+  }
+
+  /**
+   * 좌석 예약 이벤트 수신용 Dead Letter Queue를 생성한다.
+   *
+   * @return durable DLQ
+   */
+  @Bean
+  public Queue seatReservedProductDlq() {
+    return QueueBuilder.durable(QUEUE_SEAT_RESERVED_PRODUCT + ".dlq").build();
+  }
+
+  /**
+   * 좌석 해제 이벤트 수신용 Dead Letter Queue를 생성한다.
+   *
+   * @return durable DLQ
+   */
+  @Bean
+  public Queue seatReleasedProductDlq() {
+    return QueueBuilder.durable(QUEUE_SEAT_RELEASED_PRODUCT + ".dlq").build();
+  }
+
+  /**
+   * 좌석 예약 이벤트 DLQ와 ReservationSeat DLX를 바인딩한다.
+   *
+   * @param seatReservedProductDlq 바인딩할 DLQ
+   * @param reservationSeatDeadLetterExchange 바인딩할 DLX
    * @return DLQ Binding
    */
   @Bean
-  public Binding deadLetterTicketBinding(
-      Queue deadLetterTicketQueue, TopicExchange deadLetterExchange) {
-    return BindingBuilder.bind(deadLetterTicketQueue)
-        .to(deadLetterExchange)
-        .with("dlq." + ROUTING_KEY_CANCELLED_TICKET);
+  public Binding seatReservedProductDlqBinding(
+      Queue seatReservedProductDlq, TopicExchange reservationSeatDeadLetterExchange) {
+    return BindingBuilder.bind(seatReservedProductDlq)
+        .to(reservationSeatDeadLetterExchange)
+        .with("dlq." + ROUTING_KEY_SEAT_RESERVED + ".product");
+  }
+
+  /**
+   * 좌석 해제 이벤트 DLQ와 ReservationSeat DLX를 바인딩한다.
+   *
+   * @param seatReleasedProductDlq 바인딩할 DLQ
+   * @param reservationSeatDeadLetterExchange 바인딩할 DLX
+   * @return DLQ Binding
+   */
+  @Bean
+  public Binding seatReleasedProductDlqBinding(
+      Queue seatReleasedProductDlq, TopicExchange reservationSeatDeadLetterExchange) {
+    return BindingBuilder.bind(seatReleasedProductDlq)
+        .to(reservationSeatDeadLetterExchange)
+        .with("dlq." + ROUTING_KEY_SEAT_RELEASED + ".product");
   }
 
   // ========================================

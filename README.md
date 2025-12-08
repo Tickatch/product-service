@@ -10,14 +10,14 @@ Tickatch는 콘서트, 뮤지컬, 연극, 스포츠 등 다양한 공연의 티�
 
 ## 기술 스택
 
-| 분류 | 기술 |
-|------|------|
+| 분류 | 기술              |
+|------|-----------------|
 | Framework | Spring Boot 3.x |
-| Language | Java 17+ |
-| Database | PostgreSQL |
-| Messaging | RabbitMQ |
-| Query | QueryDSL |
-| Communication | OpenFeign |
+| Language | Java 21+        |
+| Database | PostgreSQL      |
+| Messaging | RabbitMQ        |
+| Query | QueryDSL        |
+| Communication | OpenFeign       |
 | Security | Spring Security |
 
 ## 아키텍처

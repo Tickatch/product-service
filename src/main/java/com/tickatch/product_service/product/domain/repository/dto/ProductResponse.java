@@ -22,6 +22,9 @@ public final class ProductResponse {
   /** 상품 ID */
   private final Long id;
 
+  /** 판매자 ID */
+  private final String sellerId;
+
   /** 상품명 */
   private final String name;
 
@@ -31,17 +34,56 @@ public final class ProductResponse {
   /** 상영 시간 (분) */
   private final Integer runningTime;
 
-  /** 시작 일시 */
+  /** 행사 시작 일시 */
   private final LocalDateTime startAt;
 
-  /** 종료 일시 */
+  /** 행사 종료 일시 */
   private final LocalDateTime endAt;
+
+  /** 예매 시작 일시 */
+  private final LocalDateTime saleStartAt;
+
+  /** 예매 종료 일시 */
+  private final LocalDateTime saleEndAt;
 
   /** 스테이지 ID */
   private final Long stageId;
 
+  /** 스테이지명 */
+  private final String stageName;
+
+  /** 아트홀 ID */
+  private final Long artHallId;
+
+  /** 아트홀명 */
+  private final String artHallName;
+
+  /** 아트홀 주소 */
+  private final String artHallAddress;
+
+  /** 총 좌석 수 */
+  private final int totalSeats;
+
+  /** 잔여 좌석 수 */
+  private final int availableSeats;
+
+  /** 매진 여부 */
+  private final boolean soldOut;
+
+  /** 조회수 */
+  private final Long viewCount;
+
+  /** 예매 수 */
+  private final int reservationCount;
+
+  /** 구매 가능 여부 */
+  private final boolean purchasable;
+
   /** 상품 상태 */
   private final ProductStatus status;
+
+  /** 반려 사유 */
+  private final String rejectionReason;
 
   /** 생성 일시 */
   private final LocalDateTime createdAt;
@@ -58,13 +100,27 @@ public final class ProductResponse {
   public static ProductResponse from(Product product) {
     return ProductResponse.builder()
         .id(product.getId())
+        .sellerId(product.getSellerId())
         .name(product.getName())
         .productType(product.getProductType())
         .runningTime(product.getRunningTime())
         .startAt(product.getStartAt())
         .endAt(product.getEndAt())
+        .saleStartAt(product.getSaleStartAt())
+        .saleEndAt(product.getSaleEndAt())
         .stageId(product.getStageId())
+        .stageName(product.getVenue().getStageName())
+        .artHallId(product.getVenue().getArtHallId())
+        .artHallName(product.getVenue().getArtHallName())
+        .artHallAddress(product.getVenue().getArtHallAddress())
+        .totalSeats(product.getSeatSummary().getTotalSeats())
+        .availableSeats(product.getSeatSummary().getAvailableSeats())
+        .soldOut(product.isSoldOut())
+        .viewCount(product.getStats().getViewCount())
+        .reservationCount(product.getStats().getReservationCount())
+        .purchasable(product.canPurchase())
         .status(product.getStatus())
+        .rejectionReason(product.getRejectionReason())
         .createdAt(product.getCreatedAt())
         .updatedAt(product.getUpdatedAt())
         .build();
