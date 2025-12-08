@@ -120,17 +120,6 @@ Product (확장 후)
 │       ├── availableSeats (잔여 좌석수)
 │       └── displayOrder (정렬 순서)
 │
-├── 부가 정보 ⭐ NEW (선택적)
-│   ├── metadata: ProductMetadata
-│   │   ├── tags (검색 태그)
-│   │   ├── subCategory (서브 카테고리)
-│   │   ├── featured (추천 여부)
-│   │   └── priority (우선순위)
-│   │
-│   └── contactInfo: ContactInfo
-│       ├── inquiryPhone (문의 전화)
-│       ├── inquiryEmail (문의 이메일)
-│       └── homepageUrl (홈페이지)
 │
 └── 통계 정보
     └── stats: ProductStats (기존)
@@ -276,33 +265,6 @@ Product (확장 후)
 
 ---
 
-### 4.7 ProductMetadata (부가 정보) - 선택적
-
-#### 목적
-검색 및 추천 기능을 위한 메타데이터를 관리한다.
-
-#### 필드 정의
-| 필드 | 타입 | 제약조건 | 설명 |
-|------|------|----------|------|
-| tags | String | 최대 500자 | 검색 태그 (콤마 구분) |
-| subCategory | String | 최대 50자 | 서브 카테고리 |
-| featured | Boolean | 기본값: false | 메인 추천 여부 |
-| priority | Integer | 기본값: 0 | 노출 우선순위 |
-
----
-
-### 4.8 ContactInfo (연락처 정보) - 선택적
-
-#### 목적
-문의처 정보를 관리한다.
-
-#### 필드 정의
-| 필드 | 타입 | 제약조건 | 설명 |
-|------|------|----------|------|
-| inquiryPhone | String | 최대 20자 | 문의 전화번호 |
-| inquiryEmail | String | 최대 100자 | 문의 이메일 |
-| homepageUrl | String | 최대 300자 | 홈페이지 URL |
-
 ---
 
 ## 5. 우선순위 및 구현 계획
@@ -317,8 +279,6 @@ Product (확장 후)
 | **2순위** | BookingPolicy | 예매 제한 로직 필요 | 예매 기능 구현 시 |
 | **2순위** | RefundPolicy | 취소/환불 로직 필요 | 취소 기능 구현 시 |
 | **3순위** | AdmissionPolicy | 상세 정보 제공 | 상세 페이지 고도화 시 |
-| **4순위** | ProductMetadata | 검색/추천 고도화 | 검색 기능 구현 시 |
-| **4순위** | ContactInfo | 부가 정보 | 필요 시 |
 
 ### 5.2 1차 구현 범위 (Phase 1)
 - ProductContent
@@ -330,10 +290,6 @@ Product (확장 후)
 - BookingPolicy
 - RefundPolicy
 - AdmissionPolicy
-
-### 5.4 3차 구현 범위 (Phase 3)
-- ProductMetadata
-- ContactInfo
 
 ---
 
@@ -374,16 +330,6 @@ ALTER TABLE p_product ADD COLUMN cancellable BOOLEAN DEFAULT TRUE;
 ALTER TABLE p_product ADD COLUMN cancel_deadline_days INT DEFAULT 1;
 ALTER TABLE p_product ADD COLUMN refund_policy_text VARCHAR(1000);
 
--- ProductMetadata
-ALTER TABLE p_product ADD COLUMN tags VARCHAR(500);
-ALTER TABLE p_product ADD COLUMN sub_category VARCHAR(50);
-ALTER TABLE p_product ADD COLUMN featured BOOLEAN DEFAULT FALSE;
-ALTER TABLE p_product ADD COLUMN priority INT DEFAULT 0;
-
--- ContactInfo
-ALTER TABLE p_product ADD COLUMN inquiry_phone VARCHAR(20);
-ALTER TABLE p_product ADD COLUMN inquiry_email VARCHAR(100);
-ALTER TABLE p_product ADD COLUMN homepage_url VARCHAR(300);
 ```
 
 ### 6.2 p_product_seat_grade 테이블 신규 생성
