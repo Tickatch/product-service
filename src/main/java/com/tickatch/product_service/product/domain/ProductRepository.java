@@ -1,6 +1,9 @@
 package com.tickatch.product_service.product.domain;
 
 import com.tickatch.product_service.product.domain.repository.dto.ProductSearchCondition;
+import com.tickatch.product_service.product.domain.vo.ProductStatus;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -53,4 +56,39 @@ public interface ProductRepository {
    * @return 페이징된 상품 목록
    */
   Page<Product> findAllByCondition(ProductSearchCondition condition, Pageable pageable);
+
+  // ========== 스케줄러용 ==========
+
+  /**
+   * 특정 상태이면서 판매 시작 시간이 지난 상품을 조회한다.
+   *
+   * <p>SCHEDULED → ON_SALE 상태 전이에 사용한다.
+   *
+   * @param status 상품 상태
+   * @param time 기준 시간
+   * @return 조건에 맞는 상품 목록
+   */
+  List<Product> findByStatusAndSaleStartAtBefore(ProductStatus status, LocalDateTime time);
+
+  /**
+   * 특정 상태이면서 판매 종료 시간이 지난 상품을 조회한다.
+   *
+   * <p>ON_SALE → CLOSED 상태 전이에 사용한다.
+   *
+   * @param status 상품 상태
+   * @param time 기준 시간
+   * @return 조건에 맞는 상품 목록
+   */
+  List<Product> findByStatusAndSaleEndAtBefore(ProductStatus status, LocalDateTime time);
+
+  /**
+   * 특정 상태이면서 행사 종료 시간이 지난 상품을 조회한다.
+   *
+   * <p>CLOSED → COMPLETED 상태 전이에 사용한다.
+   *
+   * @param status 상품 상태
+   * @param time 기준 시간
+   * @return 조건에 맞는 상품 목록
+   */
+  List<Product> findByStatusAndEndAtBefore(ProductStatus status, LocalDateTime time);
 }

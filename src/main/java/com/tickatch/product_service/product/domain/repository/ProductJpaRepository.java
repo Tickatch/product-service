@@ -1,7 +1,10 @@
 package com.tickatch.product_service.product.domain.repository;
 
 import com.tickatch.product_service.product.domain.Product;
+import com.tickatch.product_service.product.domain.vo.ProductStatus;
 import jakarta.persistence.LockModeType;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -30,4 +33,33 @@ public interface ProductJpaRepository extends JpaRepository<Product, Long> {
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT p FROM Product p WHERE p.id = :id")
   Optional<Product> findByIdForUpdate(@Param("id") Long id);
+
+  // ========== 스케줄러용 ==========
+
+  /**
+   * 특정 상태이면서 판매 시작 시간이 지난 상품을 조회한다.
+   *
+   * @param status 상품 상태
+   * @param time 기준 시간
+   * @return 조건에 맞는 상품 목록
+   */
+  List<Product> findByStatusAndSaleScheduleSaleStartAtBefore(ProductStatus status, LocalDateTime time);
+
+  /**
+   * 특정 상태이면서 판매 종료 시간이 지난 상품을 조회한다.
+   *
+   * @param status 상품 상태
+   * @param time 기준 시간
+   * @return 조건에 맞는 상품 목록
+   */
+  List<Product> findByStatusAndSaleScheduleSaleEndAtBefore(ProductStatus status, LocalDateTime time);
+
+  /**
+   * 특정 상태이면서 행사 종료 시간이 지난 상품을 조회한다.
+   *
+   * @param status 상품 상태
+   * @param time 기준 시간
+   * @return 조건에 맞는 상품 목록
+   */
+  List<Product> findByStatusAndScheduleEndAtBefore(ProductStatus status, LocalDateTime time);
 }

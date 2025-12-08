@@ -12,6 +12,7 @@ import com.tickatch.product_service.product.domain.ProductRepository;
 import com.tickatch.product_service.product.domain.repository.dto.ProductSearchCondition;
 import com.tickatch.product_service.product.domain.vo.ProductStatus;
 import com.tickatch.product_service.product.domain.vo.ProductType;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -185,5 +186,29 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     return orderSpecifiers.toArray(new OrderSpecifier[0]);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public List<Product> findByStatusAndSaleStartAtBefore(ProductStatus status, LocalDateTime time) {
+    return productJpaRepository.findByStatusAndSaleScheduleSaleStartAtBefore(status, time);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public List<Product> findByStatusAndSaleEndAtBefore(ProductStatus status, LocalDateTime time) {
+    return productJpaRepository.findByStatusAndSaleScheduleSaleEndAtBefore(status, time);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public List<Product> findByStatusAndEndAtBefore(ProductStatus status, LocalDateTime time) {
+    return productJpaRepository.findByStatusAndScheduleEndAtBefore(status, time);
   }
 }
