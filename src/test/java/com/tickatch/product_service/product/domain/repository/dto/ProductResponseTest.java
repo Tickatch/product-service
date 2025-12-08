@@ -3,6 +3,11 @@ package com.tickatch.product_service.product.domain.repository.dto;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tickatch.product_service.product.domain.Product;
+import com.tickatch.product_service.product.domain.vo.AdmissionPolicy;
+import com.tickatch.product_service.product.domain.vo.AgeRestriction;
+import com.tickatch.product_service.product.domain.vo.BookingPolicy;
+import com.tickatch.product_service.product.domain.vo.ProductContent;
+import com.tickatch.product_service.product.domain.vo.RefundPolicy;
 import com.tickatch.product_service.product.domain.vo.ProductStatus;
 import com.tickatch.product_service.product.domain.vo.ProductType;
 import com.tickatch.product_service.product.domain.vo.SaleSchedule;
@@ -35,7 +40,12 @@ class ProductResponseTest {
 
     Product product =
         Product.create(
-            SELLER_ID, "테스트 공연", ProductType.CONCERT, 120, schedule, saleSchedule, venue);
+            SELLER_ID, "테스트 공연", ProductType.CONCERT, 120, schedule, saleSchedule, venue,
+            ProductContent.empty(),
+            AgeRestriction.defaultRestriction(),
+            BookingPolicy.defaultPolicy(),
+            AdmissionPolicy.defaultPolicy(),
+            RefundPolicy.defaultPolicy());
 
     ProductResponse response = ProductResponse.from(product);
 
@@ -83,7 +93,12 @@ class ProductResponseTest {
     Venue venue = new Venue(2L, "대공연장", 200L, "세종문화회관", "서울시 종로구");
 
     Product product =
-        Product.create(SELLER_ID, "뮤지컬", ProductType.MUSICAL, 150, schedule, saleSchedule, venue);
+        Product.create(SELLER_ID, "뮤지컬", ProductType.MUSICAL, 150, schedule, saleSchedule, venue,
+            ProductContent.empty(),
+            AgeRestriction.defaultRestriction(),
+            BookingPolicy.defaultPolicy(),
+            AdmissionPolicy.defaultPolicy(),
+            RefundPolicy.defaultPolicy());
 
     ProductResponse response = ProductResponse.from(product);
 
@@ -144,7 +159,12 @@ class ProductResponseTest {
 
     Product product =
         Product.create(
-            SELLER_ID, "테스트 공연", ProductType.CONCERT, 120, schedule, saleSchedule, venue);
+            SELLER_ID, "테스트 공연", ProductType.CONCERT, 120, schedule, saleSchedule, venue,
+            ProductContent.empty(),
+            AgeRestriction.defaultRestriction(),
+            BookingPolicy.defaultPolicy(),
+            AdmissionPolicy.defaultPolicy(),
+            RefundPolicy.defaultPolicy());
 
     // canPurchase() 조건: ON_SALE + 판매기간 내 + 좌석 있음
     product.initializeSeatSummary(100);
@@ -171,6 +191,11 @@ class ProductResponseTest {
     Venue venue = new Venue(STAGE_ID, STAGE_NAME, ART_HALL_ID, ART_HALL_NAME, ART_HALL_ADDRESS);
 
     return Product.create(
-        SELLER_ID, "테스트 공연", ProductType.CONCERT, 120, schedule, saleSchedule, venue);
+        SELLER_ID, "테스트 공연", ProductType.CONCERT, 120, schedule, saleSchedule, venue,
+        ProductContent.empty(),
+        AgeRestriction.defaultRestriction(),
+        BookingPolicy.defaultPolicy(),
+        AdmissionPolicy.defaultPolicy(),
+        RefundPolicy.defaultPolicy());
   }
 }
