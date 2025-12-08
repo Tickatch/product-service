@@ -10,17 +10,17 @@ Product 도메인의 확장 계획을 정의합니다. 핵심 비즈니스 필�
 
 기존 enum에 새로운 상태 값을 추가합니다.
 
-| 구분 | 값 | 설명 | 변경 |
-|------|-----|------|------|
-| 등록 | `DRAFT` | 임시저장 | 기존 |
-| 등록 | `PENDING` | 심사대기 | 기존 |
-| 등록 | `APPROVED` | 승인됨 | 🆕 |
-| 등록 | `REJECTED` | 반려됨 | 🆕 |
-| 판매 | `SCHEDULED` | 예매예정 (승인 후, 예매 시작 전) | 🆕 |
-| 판매 | `ON_SALE` | 판매중 | 기존 |
-| 종료 | `CLOSED` | 판매종료 (예매 기간 종료) | 🆕 |
-| 종료 | `COMPLETED` | 행사종료 | 🆕 |
-| 종료 | `CANCELLED` | 취소됨 | 기존 |
+| 구분 | 값 | 설명 | 변경  |
+|------|-----|------|-----|
+| 등록 | `DRAFT` | 임시저장 | 기존  |
+| 등록 | `PENDING` | 심사대기 | 기존  |
+| 등록 | `APPROVED` | 승인됨 | new |
+| 등록 | `REJECTED` | 반려됨 | new  |
+| 판매 | `SCHEDULED` | 예매예정 (승인 후, 예매 시작 전) | new  |
+| 판매 | `ON_SALE` | 판매중 | 기존  |
+| 종료 | `CLOSED` | 판매종료 (예매 기간 종료) | new  |
+| 종료 | `COMPLETED` | 행사종료 | new  |
+| 종료 | `CANCELLED` | 취소됨 | 기존  |
 
 ### 상태 전이 규칙
 
@@ -128,13 +128,13 @@ void decrementReservation()         // 취소 시 감소
 | 기본 | `productType` | `ProductType` | 기존 |
 | 기본 | `runningTime` | `Integer` | 기존 |
 | 일정 | `schedule` | `Schedule` | 기존 |
-| 일정 | `saleSchedule` | `SaleSchedule` | 🆕 |
-| 판매자 | `sellerId` | `String` | 🆕 |
-| 심사 | `rejectionReason` | `String` | 🆕 |
+| 일정 | `saleSchedule` | `SaleSchedule` | new |
+| 판매자 | `sellerId` | `String` | new |
+| 심사 | `rejectionReason` | `String` | new |
 | 장소 | ~~`stageId`~~ | ~~`Long`~~ | ❌ 제거 → Venue로 이동 |
-| 장소 | `venue` | `Venue` | 🆕 |
-| 좌석 | `seatSummary` | `SeatSummary` | 🆕 |
-| 통계 | `stats` | `ProductStats` | 🆕 |
+| 장소 | `venue` | `Venue` | new |
+| 좌석 | `seatSummary` | `SeatSummary` | new |
+| 통계 | `stats` | `ProductStats` | new |
 | 상태 | `status` | `ProductStatus` | 기존 (값 확장) |
 
 ---
@@ -149,7 +149,7 @@ Product
 │   ├── productType: ProductType
 │   └── runningTime: Integer
 │
-├── 판매자 정보 🆕
+├── 판매자 정보 (new)
 │   └── sellerId: String
 │
 ├── 일정 정보
@@ -157,11 +157,11 @@ Product
 │   │   ├── startAt: LocalDateTime
 │   │   └── endAt: LocalDateTime
 │   │
-│   └── saleSchedule: SaleSchedule 🆕
+│   └── saleSchedule: SaleSchedule (new)
 │       ├── saleStartAt: LocalDateTime
 │       └── saleEndAt: LocalDateTime
 │
-├── 장소 정보 🆕
+├── 장소 정보 (new)
 │   └── venue: Venue
 │       ├── stageId: Long
 │       ├── stageName: String
@@ -169,18 +169,18 @@ Product
 │       ├── artHallName: String
 │       └── artHallAddress: String
 │
-├── 좌석 현황 🆕
+├── 좌석 현황 (new)
 │   └── seatSummary: SeatSummary
 │       ├── totalSeats: Integer
 │       ├── availableSeats: Integer
 │       └── updatedAt: LocalDateTime
 │
-├── 통계 🆕
+├── 통계 (new)
 │   └── stats: ProductStats
 │       ├── viewCount: Long
 │       └── reservationCount: Integer
 │
-├── 심사 🆕
+├── 심사 (new)
 │   └── rejectionReason: String
 │
 └── 상태
