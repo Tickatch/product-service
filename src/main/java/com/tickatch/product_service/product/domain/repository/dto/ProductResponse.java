@@ -214,38 +214,79 @@ public final class ProductResponse {
         .artHallAddress(product.getVenue().getArtHallAddress())
         // 콘텐츠
         .description(product.getContent() != null ? product.getContent().getDescription() : null)
-        .posterImageUrl(product.getContent() != null ? product.getContent().getPosterImageUrl() : null)
-        .detailImageUrls(product.getContent() != null ? product.getContent().getDetailImageUrls() : null)
+        .posterImageUrl(
+            product.getContent() != null ? product.getContent().getPosterImageUrl() : null)
+        .detailImageUrls(
+            product.getContent() != null ? product.getContent().getDetailImageUrls() : null)
         .castInfo(product.getContent() != null ? product.getContent().getCastInfo() : null)
         .notice(product.getContent() != null ? product.getContent().getNotice() : null)
         .organizer(product.getContent() != null ? product.getContent().getOrganizer() : null)
         .agency(product.getContent() != null ? product.getContent().getAgency() : null)
         // 관람 제한
-        .ageRating(product.getAgeRestriction() != null ? product.getAgeRestriction().getAgeRating() : null)
-        .restrictionNotice(product.getAgeRestriction() != null ? product.getAgeRestriction().getRestrictionNotice() : null)
+        .ageRating(
+            product.getAgeRestriction() != null ? product.getAgeRestriction().getAgeRating() : null)
+        .restrictionNotice(
+            product.getAgeRestriction() != null
+                ? product.getAgeRestriction().getRestrictionNotice()
+                : null)
         // 예매 정책
-        .maxTicketsPerPerson(product.getBookingPolicy() != null ? product.getBookingPolicy().getMaxTicketsPerPerson() : null)
-        .idVerificationRequired(product.getBookingPolicy() != null ? product.getBookingPolicy().getIdVerificationRequired() : null)
-        .transferable(product.getBookingPolicy() != null ? product.getBookingPolicy().getTransferable() : null)
+        .maxTicketsPerPerson(
+            product.getBookingPolicy() != null
+                ? product.getBookingPolicy().getMaxTicketsPerPerson()
+                : null)
+        .idVerificationRequired(
+            product.getBookingPolicy() != null
+                ? product.getBookingPolicy().getIdVerificationRequired()
+                : null)
+        .transferable(
+            product.getBookingPolicy() != null
+                ? product.getBookingPolicy().getTransferable()
+                : null)
         // 입장 정책
-        .admissionMinutesBefore(product.getAdmissionPolicy() != null ? product.getAdmissionPolicy().getAdmissionMinutesBefore() : null)
-        .lateEntryAllowed(product.getAdmissionPolicy() != null ? product.getAdmissionPolicy().getLateEntryAllowed() : null)
-        .lateEntryNotice(product.getAdmissionPolicy() != null ? product.getAdmissionPolicy().getLateEntryNotice() : null)
-        .hasIntermission(product.getAdmissionPolicy() != null ? product.getAdmissionPolicy().getHasIntermission() : null)
-        .intermissionMinutes(product.getAdmissionPolicy() != null ? product.getAdmissionPolicy().getIntermissionMinutes() : null)
-        .photographyAllowed(product.getAdmissionPolicy() != null ? product.getAdmissionPolicy().getPhotographyAllowed() : null)
-        .foodAllowed(product.getAdmissionPolicy() != null ? product.getAdmissionPolicy().getFoodAllowed() : null)
+        .admissionMinutesBefore(
+            product.getAdmissionPolicy() != null
+                ? product.getAdmissionPolicy().getAdmissionMinutesBefore()
+                : null)
+        .lateEntryAllowed(
+            product.getAdmissionPolicy() != null
+                ? product.getAdmissionPolicy().getLateEntryAllowed()
+                : null)
+        .lateEntryNotice(
+            product.getAdmissionPolicy() != null
+                ? product.getAdmissionPolicy().getLateEntryNotice()
+                : null)
+        .hasIntermission(
+            product.getAdmissionPolicy() != null
+                ? product.getAdmissionPolicy().getHasIntermission()
+                : null)
+        .intermissionMinutes(
+            product.getAdmissionPolicy() != null
+                ? product.getAdmissionPolicy().getIntermissionMinutes()
+                : null)
+        .photographyAllowed(
+            product.getAdmissionPolicy() != null
+                ? product.getAdmissionPolicy().getPhotographyAllowed()
+                : null)
+        .foodAllowed(
+            product.getAdmissionPolicy() != null
+                ? product.getAdmissionPolicy().getFoodAllowed()
+                : null)
         // 환불 정책
-        .cancellable(product.getRefundPolicy() != null ? product.getRefundPolicy().getCancellable() : null)
-        .cancelDeadlineDays(product.getRefundPolicy() != null ? product.getRefundPolicy().getCancelDeadlineDays() : null)
-        .refundPolicyText(product.getRefundPolicy() != null ? product.getRefundPolicy().getRefundPolicyText() : null)
+        .cancellable(
+            product.getRefundPolicy() != null ? product.getRefundPolicy().getCancellable() : null)
+        .cancelDeadlineDays(
+            product.getRefundPolicy() != null
+                ? product.getRefundPolicy().getCancelDeadlineDays()
+                : null)
+        .refundPolicyText(
+            product.getRefundPolicy() != null
+                ? product.getRefundPolicy().getRefundPolicyText()
+                : null)
         // 좌석 현황
         .totalSeats(product.getSeatSummary().getTotalSeats())
         .availableSeats(product.getSeatSummary().getAvailableSeats())
         .soldOut(product.isSoldOut())
-        .seatGrades(product.getSeatGrades().stream()
-            .map(SeatGradeResponse::from)
-            .toList())
+        .seatGrades(product.getSeatGrades().stream().map(SeatGradeResponse::from).toList())
         // 통계
         .viewCount(product.getStats().getViewCount())
         .reservationCount(product.getStats().getReservationCount())
@@ -259,9 +300,7 @@ public final class ProductResponse {
         .build();
   }
 
-  /**
-   * 등급별 좌석 응답 DTO.
-   */
+  /** 등급별 좌석 응답 DTO. */
   @Getter
   @Builder
   public static class SeatGradeResponse {

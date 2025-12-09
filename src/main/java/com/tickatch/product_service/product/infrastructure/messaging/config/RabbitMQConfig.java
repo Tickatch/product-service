@@ -68,12 +68,10 @@ public class RabbitMQConfig {
   // ========================================
 
   /** 좌석 예약 이벤트 수신 큐 (from ReservationSeat) */
-  public static final String QUEUE_SEAT_RESERVED_PRODUCT =
-      "tickatch.seat.reserved.product.queue";
+  public static final String QUEUE_SEAT_RESERVED_PRODUCT = "tickatch.seat.reserved.product.queue";
 
   /** 좌석 해제 이벤트 수신 큐 (from ReservationSeat) */
-  public static final String QUEUE_SEAT_RELEASED_PRODUCT =
-      "tickatch.seat.released.product.queue";
+  public static final String QUEUE_SEAT_RELEASED_PRODUCT = "tickatch.seat.released.product.queue";
 
   // ========================================
   // Routing Keys - Product 수신용
@@ -156,8 +154,7 @@ public class RabbitMQConfig {
   /**
    * 좌석 예약 이벤트 수신 큐를 생성한다.
    *
-   * <p>ReservationSeat 서비스에서 좌석이 예약되면 이 큐로 메시지가 전달된다.
-   * 메시지 처리 실패 시 DLQ로 이동한다.
+   * <p>ReservationSeat 서비스에서 좌석이 예약되면 이 큐로 메시지가 전달된다. 메시지 처리 실패 시 DLQ로 이동한다.
    *
    * @return DLQ 설정이 포함된 durable Queue
    */
@@ -172,8 +169,7 @@ public class RabbitMQConfig {
   /**
    * 좌석 해제 이벤트 수신 큐를 생성한다.
    *
-   * <p>ReservationSeat 서비스에서 좌석이 해제되면 이 큐로 메시지가 전달된다.
-   * 메시지 처리 실패 시 DLQ로 이동한다.
+   * <p>ReservationSeat 서비스에서 좌석이 해제되면 이 큐로 메시지가 전달된다. 메시지 처리 실패 시 DLQ로 이동한다.
    *
    * @return DLQ 설정이 포함된 durable Queue
    */

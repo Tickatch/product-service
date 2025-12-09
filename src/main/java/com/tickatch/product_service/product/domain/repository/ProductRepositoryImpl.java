@@ -188,27 +188,26 @@ public class ProductRepositoryImpl implements ProductRepository {
     return orderSpecifiers.toArray(new OrderSpecifier[0]);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public List<Product> findByStatusAndSaleStartAtBefore(ProductStatus status, LocalDateTime time) {
     return productJpaRepository.findByStatusAndSaleScheduleSaleStartAtBefore(status, time);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public List<Product> findByStatusAndSaleEndAtBefore(ProductStatus status, LocalDateTime time) {
     return productJpaRepository.findByStatusAndSaleScheduleSaleEndAtBefore(status, time);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public List<Product> findByStatusAndEndAtBefore(ProductStatus status, LocalDateTime time) {
     return productJpaRepository.findByStatusAndScheduleEndAtBefore(status, time);
+  }
+
+  @Override
+  public void flush() {
+    productJpaRepository.flush();
   }
 }

@@ -119,8 +119,10 @@ public final class ProductContent {
    * @return description과 posterImageUrl이 있으면 true
    */
   public boolean hasRequiredFields() {
-    return description != null && !description.isBlank()
-        && posterImageUrl != null && !posterImageUrl.isBlank();
+    return description != null
+        && !description.isBlank()
+        && posterImageUrl != null
+        && !posterImageUrl.isBlank();
   }
 
   private static void validate(

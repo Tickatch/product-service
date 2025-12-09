@@ -43,7 +43,8 @@ public interface ProductJpaRepository extends JpaRepository<Product, Long> {
    * @param time 기준 시간
    * @return 조건에 맞는 상품 목록
    */
-  List<Product> findByStatusAndSaleScheduleSaleStartAtBefore(ProductStatus status, LocalDateTime time);
+  List<Product> findByStatusAndSaleScheduleSaleStartAtBefore(
+      ProductStatus status, LocalDateTime time);
 
   /**
    * 특정 상태이면서 판매 종료 시간이 지난 상품을 조회한다.
@@ -52,7 +53,8 @@ public interface ProductJpaRepository extends JpaRepository<Product, Long> {
    * @param time 기준 시간
    * @return 조건에 맞는 상품 목록
    */
-  List<Product> findByStatusAndSaleScheduleSaleEndAtBefore(ProductStatus status, LocalDateTime time);
+  List<Product> findByStatusAndSaleScheduleSaleEndAtBefore(
+      ProductStatus status, LocalDateTime time);
 
   /**
    * 특정 상태이면서 행사 종료 시간이 지난 상품을 조회한다.

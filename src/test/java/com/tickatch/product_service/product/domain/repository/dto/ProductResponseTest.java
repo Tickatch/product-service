@@ -7,9 +7,9 @@ import com.tickatch.product_service.product.domain.vo.AdmissionPolicy;
 import com.tickatch.product_service.product.domain.vo.AgeRestriction;
 import com.tickatch.product_service.product.domain.vo.BookingPolicy;
 import com.tickatch.product_service.product.domain.vo.ProductContent;
-import com.tickatch.product_service.product.domain.vo.RefundPolicy;
 import com.tickatch.product_service.product.domain.vo.ProductStatus;
 import com.tickatch.product_service.product.domain.vo.ProductType;
+import com.tickatch.product_service.product.domain.vo.RefundPolicy;
 import com.tickatch.product_service.product.domain.vo.SaleSchedule;
 import com.tickatch.product_service.product.domain.vo.Schedule;
 import com.tickatch.product_service.product.domain.vo.Venue;
@@ -40,7 +40,13 @@ class ProductResponseTest {
 
     Product product =
         Product.create(
-            SELLER_ID, "테스트 공연", ProductType.CONCERT, 120, schedule, saleSchedule, venue,
+            SELLER_ID,
+            "테스트 공연",
+            ProductType.CONCERT,
+            120,
+            schedule,
+            saleSchedule,
+            venue,
             ProductContent.empty(),
             AgeRestriction.defaultRestriction(),
             BookingPolicy.defaultPolicy(),
@@ -93,7 +99,14 @@ class ProductResponseTest {
     Venue venue = new Venue(2L, "대공연장", 200L, "세종문화회관", "서울시 종로구");
 
     Product product =
-        Product.create(SELLER_ID, "뮤지컬", ProductType.MUSICAL, 150, schedule, saleSchedule, venue,
+        Product.create(
+            SELLER_ID,
+            "뮤지컬",
+            ProductType.MUSICAL,
+            150,
+            schedule,
+            saleSchedule,
+            venue,
             ProductContent.empty(),
             AgeRestriction.defaultRestriction(),
             BookingPolicy.defaultPolicy(),
@@ -159,7 +172,13 @@ class ProductResponseTest {
 
     Product product =
         Product.create(
-            SELLER_ID, "테스트 공연", ProductType.CONCERT, 120, schedule, saleSchedule, venue,
+            SELLER_ID,
+            "테스트 공연",
+            ProductType.CONCERT,
+            120,
+            schedule,
+            saleSchedule,
+            venue,
             ProductContent.empty(),
             AgeRestriction.defaultRestriction(),
             BookingPolicy.defaultPolicy(),
@@ -191,7 +210,13 @@ class ProductResponseTest {
     Venue venue = new Venue(STAGE_ID, STAGE_NAME, ART_HALL_ID, ART_HALL_NAME, ART_HALL_ADDRESS);
 
     return Product.create(
-        SELLER_ID, "테스트 공연", ProductType.CONCERT, 120, schedule, saleSchedule, venue,
+        SELLER_ID,
+        "테스트 공연",
+        ProductType.CONCERT,
+        120,
+        schedule,
+        saleSchedule,
+        venue,
         ProductContent.empty(),
         AgeRestriction.defaultRestriction(),
         BookingPolicy.defaultPolicy(),

@@ -56,9 +56,7 @@ public final class BookingPolicy {
    * @throws ProductException 최대 매수가 범위를 벗어난 경우 ({@link ProductErrorCode#INVALID_BOOKING_POLICY})
    */
   public BookingPolicy(
-      Integer maxTicketsPerPerson,
-      Boolean idVerificationRequired,
-      Boolean transferable) {
+      Integer maxTicketsPerPerson, Boolean idVerificationRequired, Boolean transferable) {
     int maxTickets = maxTicketsPerPerson != null ? maxTicketsPerPerson : DEFAULT_MAX_TICKETS;
     validate(maxTickets);
 

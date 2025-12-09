@@ -8,8 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 /**
  * 예약 좌석 서비스 Feign Client.
  *
- * <p>ReservationSeat 서비스와의 통신을 담당한다.
- * 상품 생성/수정 시 개별 좌석 정보를 전달한다.
+ * <p>ReservationSeat 서비스와의 통신을 담당한다. 상품 생성/수정 시 개별 좌석 정보를 전달한다.
  *
  * @author Tickatch
  * @since 1.0.0

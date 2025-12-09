@@ -9,7 +9,12 @@ import static org.mockito.Mockito.*;
 import com.tickatch.product_service.product.domain.Product;
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
 import com.tickatch.product_service.product.domain.exception.ProductException;
+import com.tickatch.product_service.product.domain.vo.AdmissionPolicy;
+import com.tickatch.product_service.product.domain.vo.AgeRestriction;
+import com.tickatch.product_service.product.domain.vo.BookingPolicy;
+import com.tickatch.product_service.product.domain.vo.ProductContent;
 import com.tickatch.product_service.product.domain.vo.ProductType;
+import com.tickatch.product_service.product.domain.vo.RefundPolicy;
 import com.tickatch.product_service.product.domain.vo.SaleSchedule;
 import com.tickatch.product_service.product.domain.vo.Schedule;
 import com.tickatch.product_service.product.domain.vo.Venue;
@@ -170,7 +175,18 @@ class RabbitProductEventPublisherTest {
 
     Product product =
         Product.create(
-            "seller-001", "테스트 공연", ProductType.CONCERT, 120, schedule, saleSchedule, venue);
+            "seller-001",
+            "테스트 공연",
+            ProductType.CONCERT,
+            120,
+            schedule,
+            saleSchedule,
+            venue,
+            ProductContent.empty(),
+            AgeRestriction.defaultRestriction(),
+            BookingPolicy.defaultPolicy(),
+            AdmissionPolicy.defaultPolicy(),
+            RefundPolicy.defaultPolicy());
     ReflectionTestUtils.setField(product, "id", id);
     return product;
   }

@@ -10,8 +10,13 @@ import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
 import com.tickatch.product_service.product.domain.exception.ProductException;
 import com.tickatch.product_service.product.domain.repository.dto.ProductResponse;
 import com.tickatch.product_service.product.domain.repository.dto.ProductSearchCondition;
+import com.tickatch.product_service.product.domain.vo.AdmissionPolicy;
+import com.tickatch.product_service.product.domain.vo.AgeRestriction;
+import com.tickatch.product_service.product.domain.vo.BookingPolicy;
+import com.tickatch.product_service.product.domain.vo.ProductContent;
 import com.tickatch.product_service.product.domain.vo.ProductStatus;
 import com.tickatch.product_service.product.domain.vo.ProductType;
+import com.tickatch.product_service.product.domain.vo.RefundPolicy;
 import com.tickatch.product_service.product.domain.vo.SaleSchedule;
 import com.tickatch.product_service.product.domain.vo.Schedule;
 import com.tickatch.product_service.product.domain.vo.Venue;
@@ -110,15 +115,14 @@ class ProductQueryServiceTest {
 
     @Test
     void 좌석_현황이_정확히_매핑된다() {
-      Product product = createProduct(1L, DEFAULT_PRODUCT_NAME);
-      product.initializeSeatSummary(100);
+      Product product = createProductWithSeatGrade(1L, DEFAULT_PRODUCT_NAME);
       product.decreaseAvailableSeats(10);
       given(productRepository.findById(1L)).willReturn(Optional.of(product));
 
       ProductResponse response = productQueryService.getProduct(1L);
 
-      assertThat(response.getTotalSeats()).isEqualTo(100);
-      assertThat(response.getAvailableSeats()).isEqualTo(90);
+      assertThat(response.getTotalSeats()).isEqualTo(30);
+      assertThat(response.getAvailableSeats()).isEqualTo(20);
       assertThat(response.isSoldOut()).isFalse();
     }
 
@@ -265,8 +269,20 @@ class ProductQueryServiceTest {
             DEFAULT_RUNNING_TIME,
             schedule,
             saleSchedule,
-            venue);
+            venue,
+            ProductContent.empty(),
+            AgeRestriction.defaultRestriction(),
+            BookingPolicy.defaultPolicy(),
+            AdmissionPolicy.defaultPolicy(),
+            RefundPolicy.defaultPolicy());
     ReflectionTestUtils.setField(product, "id", id);
+    return product;
+  }
+
+  private Product createProductWithSeatGrade(Long id, String name) {
+    Product product = createProduct(id, name);
+    product.addSeatGrade("VIP", 150000L, 10, 1);
+    product.addSeatGrade("R", 120000L, 20, 2);
     return product;
   }
 
@@ -291,11 +307,16 @@ class ProductQueryServiceTest {
             DEFAULT_RUNNING_TIME,
             schedule,
             saleSchedule,
-            venue);
+            venue,
+            ProductContent.empty(),
+            AgeRestriction.defaultRestriction(),
+            BookingPolicy.defaultPolicy(),
+            AdmissionPolicy.defaultPolicy(),
+            RefundPolicy.defaultPolicy());
     ReflectionTestUtils.setField(product, "id", id);
 
     // 좌석 초기화 (canPurchase 조건 충족 필요)
-    product.initializeSeatSummary(100);
+    product.addSeatGrade("R", 100000L, 100, 1);
 
     // ON_SALE 상태로 전이
     product.changeStatus(ProductStatus.PENDING);

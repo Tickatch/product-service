@@ -106,8 +106,7 @@ public final class AdmissionPolicy {
    * @return 기본 AdmissionPolicy
    */
   public static AdmissionPolicy defaultPolicy() {
-    return new AdmissionPolicy(
-        DEFAULT_ADMISSION_MINUTES, false, null, false, null, false, false);
+    return new AdmissionPolicy(DEFAULT_ADMISSION_MINUTES, false, null, false, null, false, false);
   }
 
   /**

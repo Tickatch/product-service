@@ -126,14 +126,14 @@ class AgeRestrictionTest {
 
     @ParameterizedTest(name = "{0} 등급: {1}세 관람 가능 여부 = {2}")
     @CsvSource({
-        "ALL, 5, true",
-        "ALL, 0, true",
-        "TWELVE, 11, false",
-        "TWELVE, 12, true",
-        "FIFTEEN, 14, false",
-        "FIFTEEN, 15, true",
-        "NINETEEN, 18, false",
-        "NINETEEN, 19, true"
+      "ALL, 5, true",
+      "ALL, 0, true",
+      "TWELVE, 11, false",
+      "TWELVE, 12, true",
+      "FIFTEEN, 14, false",
+      "FIFTEEN, 15, true",
+      "NINETEEN, 18, false",
+      "NINETEEN, 19, true"
     })
     void 등급에_따라_관람_가능_여부를_확인한다(AgeRating rating, int age, boolean expected) {
       AgeRestriction restriction = new AgeRestriction(rating, null);

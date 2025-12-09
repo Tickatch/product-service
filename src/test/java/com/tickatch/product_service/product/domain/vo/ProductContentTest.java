@@ -17,15 +17,15 @@ class ProductContentTest {
 
     @Test
     void 유효한_값으로_생성할_수_있다() {
-      ProductContent content = new ProductContent(
-          "상세 설명입니다",
-          "https://example.com/poster.jpg",
-          "[\"https://example.com/detail1.jpg\"]",
-          "홍길동, 김철수",
-          "주의사항입니다",
-          "주최사",
-          "주관사"
-      );
+      ProductContent content =
+          new ProductContent(
+              "상세 설명입니다",
+              "https://example.com/poster.jpg",
+              "[\"https://example.com/detail1.jpg\"]",
+              "홍길동, 김철수",
+              "주의사항입니다",
+              "주최사",
+              "주관사");
 
       assertThat(content.getDescription()).isEqualTo("상세 설명입니다");
       assertThat(content.getPosterImageUrl()).isEqualTo("https://example.com/poster.jpg");
@@ -48,8 +48,8 @@ class ProductContentTest {
     void description이_5000자를_초과하면_예외가_발생한다() {
       String longDescription = "a".repeat(5001);
 
-      assertThatThrownBy(() -> new ProductContent(
-          longDescription, null, null, null, null, null, null))
+      assertThatThrownBy(
+              () -> new ProductContent(longDescription, null, null, null, null, null, null))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.INVALID_PRODUCT_CONTENT);
@@ -59,8 +59,7 @@ class ProductContentTest {
     void posterUImageUrl이_500자를_초과하면_예외가_발생한다() {
       String longUrl = "https://example.com/" + "a".repeat(500);
 
-      assertThatThrownBy(() -> new ProductContent(
-          null, longUrl, null, null, null, null, null))
+      assertThatThrownBy(() -> new ProductContent(null, longUrl, null, null, null, null, null))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.INVALID_PRODUCT_CONTENT);
@@ -70,8 +69,7 @@ class ProductContentTest {
     void castInfo가_1000자를_초과하면_예외가_발생한다() {
       String longCastInfo = "a".repeat(1001);
 
-      assertThatThrownBy(() -> new ProductContent(
-          null, null, null, longCastInfo, null, null, null))
+      assertThatThrownBy(() -> new ProductContent(null, null, null, longCastInfo, null, null, null))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.INVALID_PRODUCT_CONTENT);
@@ -81,8 +79,7 @@ class ProductContentTest {
     void notice가_2000자를_초과하면_예외가_발생한다() {
       String longNotice = "a".repeat(2001);
 
-      assertThatThrownBy(() -> new ProductContent(
-          null, null, null, null, longNotice, null, null))
+      assertThatThrownBy(() -> new ProductContent(null, null, null, null, longNotice, null, null))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.INVALID_PRODUCT_CONTENT);
@@ -92,8 +89,8 @@ class ProductContentTest {
     void organizer가_100자를_초과하면_예외가_발생한다() {
       String longOrganizer = "a".repeat(101);
 
-      assertThatThrownBy(() -> new ProductContent(
-          null, null, null, null, null, longOrganizer, null))
+      assertThatThrownBy(
+              () -> new ProductContent(null, null, null, null, null, longOrganizer, null))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.INVALID_PRODUCT_CONTENT);
@@ -103,8 +100,7 @@ class ProductContentTest {
     void agency가_100자를_초과하면_예외가_발생한다() {
       String longAgency = "a".repeat(101);
 
-      assertThatThrownBy(() -> new ProductContent(
-          null, null, null, null, null, null, longAgency))
+      assertThatThrownBy(() -> new ProductContent(null, null, null, null, null, null, longAgency))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.INVALID_PRODUCT_CONTENT);
@@ -112,15 +108,15 @@ class ProductContentTest {
 
     @Test
     void 각_필드가_최대_길이와_같으면_생성에_성공한다() {
-      ProductContent content = new ProductContent(
-          "a".repeat(5000),
-          "a".repeat(500),
-          null,
-          "a".repeat(1000),
-          "a".repeat(2000),
-          "a".repeat(100),
-          "a".repeat(100)
-      );
+      ProductContent content =
+          new ProductContent(
+              "a".repeat(5000),
+              "a".repeat(500),
+              null,
+              "a".repeat(1000),
+              "a".repeat(2000),
+              "a".repeat(100),
+              "a".repeat(100));
 
       assertThat(content.getDescription()).hasSize(5000);
       assertThat(content.getPosterImageUrl()).hasSize(500);
@@ -153,45 +149,39 @@ class ProductContentTest {
 
     @Test
     void description과_posterImageUrl이_모두_있으면_true를_반환한다() {
-      ProductContent content = new ProductContent(
-          "상세 설명", "https://example.com/poster.jpg",
-          null, null, null, null, null);
+      ProductContent content =
+          new ProductContent(
+              "상세 설명", "https://example.com/poster.jpg", null, null, null, null, null);
 
       assertThat(content.hasRequiredFields()).isTrue();
     }
 
     @Test
     void description이_없으면_false를_반환한다() {
-      ProductContent content = new ProductContent(
-          null, "https://example.com/poster.jpg",
-          null, null, null, null, null);
+      ProductContent content =
+          new ProductContent(null, "https://example.com/poster.jpg", null, null, null, null, null);
 
       assertThat(content.hasRequiredFields()).isFalse();
     }
 
     @Test
     void description이_빈_문자열이면_false를_반환한다() {
-      ProductContent content = new ProductContent(
-          "   ", "https://example.com/poster.jpg",
-          null, null, null, null, null);
+      ProductContent content =
+          new ProductContent("   ", "https://example.com/poster.jpg", null, null, null, null, null);
 
       assertThat(content.hasRequiredFields()).isFalse();
     }
 
     @Test
     void posterImageUrl이_없으면_false를_반환한다() {
-      ProductContent content = new ProductContent(
-          "상세 설명", null,
-          null, null, null, null, null);
+      ProductContent content = new ProductContent("상세 설명", null, null, null, null, null, null);
 
       assertThat(content.hasRequiredFields()).isFalse();
     }
 
     @Test
     void posterImageUrl이_빈_문자열이면_false를_반환한다() {
-      ProductContent content = new ProductContent(
-          "상세 설명", "   ",
-          null, null, null, null, null);
+      ProductContent content = new ProductContent("상세 설명", "   ", null, null, null, null, null);
 
       assertThat(content.hasRequiredFields()).isFalse();
     }
@@ -203,26 +193,22 @@ class ProductContentTest {
       assertThat(content.hasRequiredFields()).isFalse();
     }
   }
-  
+
   @Nested
   class 동등성_테스트 {
-    
+
     @Test
     void 같은_값을_가진_객체는_동등하다() {
-      ProductContent content1 = new ProductContent(
-          "설명", "https://example.com/poster.jpg",
-          null, null, null, null, null);
-      ProductContent content2 = new ProductContent(
-          "설명", "https://example.com/poster.jpg",
-          null, null, null, null, null);
+      ProductContent content1 =
+          new ProductContent("설명", "https://example.com/poster.jpg", null, null, null, null, null);
+      ProductContent content2 =
+          new ProductContent("설명", "https://example.com/poster.jpg", null, null, null, null, null);
 
       assertThat(content1).isEqualTo(content2);
       assertThat(content1.hashCode()).isEqualTo(content2.hashCode());
     }
-    
+
     @Test
-    void 다른_값을_가진_객체는_동등하지_않다() {
-      
-    }
+    void 다른_값을_가진_객체는_동등하지_않다() {}
   }
 }

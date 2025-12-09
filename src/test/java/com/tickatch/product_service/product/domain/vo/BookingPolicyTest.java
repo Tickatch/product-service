@@ -18,14 +18,10 @@ class BookingPolicyTest {
   class 생성_테스트 {
 
     @Test
-    void 유효한_값으로_생성할_수_있다() {
-
-    }
+    void 유효한_값으로_생성할_수_있다() {}
 
     @Test
-    void null_값은_기본값으로_설정된다() {
-
-    }
+    void null_값은_기본값으로_설정된다() {}
 
     @ParameterizedTest(name = "최대 매수 {0}은 유효하다")
     @ValueSource(ints = {1, 2, 5, 10})

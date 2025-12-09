@@ -11,7 +11,6 @@ import com.tickatch.product_service.product.domain.ProductRepository;
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
 import com.tickatch.product_service.product.domain.exception.ProductException;
 import com.tickatch.product_service.product.domain.vo.AdmissionPolicy;
-import com.tickatch.product_service.product.domain.vo.AgeRating;
 import com.tickatch.product_service.product.domain.vo.AgeRestriction;
 import com.tickatch.product_service.product.domain.vo.BookingPolicy;
 import com.tickatch.product_service.product.domain.vo.ProductContent;
@@ -32,8 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 상품 명령 서비스.
  *
- * <p>상품의 생성, 수정, 삭제 등 상태 변경과 관련된 비즈니스 로직을 처리한다.
- * 서비스는 "명세서 조립자" 역할을 수행하며, Command에서 받은 데이터를 VO로 조립하여
+ * <p>상품의 생성, 수정, 삭제 등 상태 변경과 관련된 비즈니스 로직을 처리한다. 서비스는 "명세서 조립자" 역할을 수행하며, Command에서 받은 데이터를 VO로 조립하여
  * 도메인에 전달한다.
  *
  * @author Tickatch
@@ -56,8 +54,8 @@ public class ProductCommandService {
   /**
    * 상품을 생성한다.
    *
-   * <p>새 상품은 DRAFT 상태로 생성된다. 서비스가 VO를 조립하여 도메인에 주입한다.
-   * 생성 후 SeatGrade를 추가하고 ReservationSeat 서비스에 개별 좌석 생성을 요청한다.
+   * <p>새 상품은 DRAFT 상태로 생성된다. 서비스가 VO를 조립하여 도메인에 주입한다. 생성 후 SeatGrade를 추가하고 ReservationSeat 서비스에 개별
+   * 좌석 생성을 요청한다.
    *
    * @param command 상품 생성 명령
    * @return 생성된 상품 ID
@@ -81,19 +79,20 @@ public class ProductCommandService {
     RefundPolicy refundPolicy = assembleRefundPolicy(command);
 
     // 3. Product 생성
-    Product product = Product.create(
-        command.getSellerId(),
-        command.getName(),
-        command.getProductType(),
-        command.getRunningTime(),
-        schedule,
-        saleSchedule,
-        venue,
-        content,
-        ageRestriction,
-        bookingPolicy,
-        admissionPolicy,
-        refundPolicy);
+    Product product =
+        Product.create(
+            command.getSellerId(),
+            command.getName(),
+            command.getProductType(),
+            command.getRunningTime(),
+            schedule,
+            saleSchedule,
+            venue,
+            content,
+            ageRestriction,
+            bookingPolicy,
+            admissionPolicy,
+            refundPolicy);
 
     // 4. SeatGrade 추가 (배열 순서대로 displayOrder)
     List<SeatGradeInfo> gradeInfos = command.getSeatGradeInfos();
@@ -108,8 +107,11 @@ public class ProductCommandService {
     // 6. ReservationSeat 서비스에 개별 좌석 생성 요청
     createReservationSeats(saved.getId(), command.getSeatCreateInfos());
 
-    log.info("상품 생성 완료. productId: {}, seatGrades: {}, seatCreateInfos: {}",
-        saved.getId(), gradeInfos.size(), command.getSeatCreateInfos().size());
+    log.info(
+        "상품 생성 완료. productId: {}, seatGrades: {}, seatCreateInfos: {}",
+        saved.getId(),
+        gradeInfos.size(),
+        command.getSeatCreateInfos().size());
 
     return saved.getId();
   }
@@ -119,8 +121,7 @@ public class ProductCommandService {
   /**
    * 상품 정보를 수정한다.
    *
-   * <p>DRAFT 또는 REJECTED 상태에서만 수정 가능하다.
-   * null이 아닌 필드만 수정되며, 값객체는 세트 단위로 수정된다.
+   * <p>DRAFT 또는 REJECTED 상태에서만 수정 가능하다. null이 아닌 필드만 수정되며, 값객체는 세트 단위로 수정된다.
    *
    * @param command 상품 수정 명령
    * @throws IllegalArgumentException Command 검증 실패 시
@@ -146,7 +147,8 @@ public class ProductCommandService {
     // 4. 일정 수정
     if (command.hasSchedule()) {
       Schedule schedule = new Schedule(command.getStartAt(), command.getEndAt());
-      SaleSchedule saleSchedule = new SaleSchedule(command.getSaleStartAt(), command.getSaleEndAt());
+      SaleSchedule saleSchedule =
+          new SaleSchedule(command.getSaleStartAt(), command.getSaleEndAt());
       product.update(
           command.getName() != null ? command.getName() : product.getName(),
           command.getProductType() != null ? command.getProductType() : product.getProductType(),
@@ -199,12 +201,12 @@ public class ProductCommandService {
     log.info("상품 수정 완료. productId: {}", command.getProductId());
   }
 
-  /**
-   * 기본 정보만 수정한다 (일정 변경 없이).
-   */
+  /** 기본 정보만 수정한다 (일정 변경 없이). */
   private void updateBasicInfo(Product product, ProductUpdateCommand command) {
     // 기본 정보만 변경하고 일정은 기존 유지
-    if (command.getName() != null || command.getProductType() != null || command.getRunningTime() != null) {
+    if (command.getName() != null
+        || command.getProductType() != null
+        || command.getRunningTime() != null) {
       Schedule currentSchedule = product.getSchedule();
       SaleSchedule currentSaleSchedule = product.getSaleSchedule();
       product.update(
@@ -216,14 +218,10 @@ public class ProductCommandService {
     }
   }
 
-  /**
-   * 좌석 등급을 전체 교체한다.
-   */
+  /** 좌석 등급을 전체 교체한다. */
   private void updateSeatGrades(Product product, ProductUpdateCommand command) {
     // 기존 SeatGrade 모두 제거
-    List<Long> existingIds = product.getSeatGrades().stream()
-        .map(sg -> sg.getId())
-        .toList();
+    List<Long> existingIds = product.getSeatGrades().stream().map(sg -> sg.getId()).toList();
     for (Long id : existingIds) {
       product.removeSeatGrade(id);
     }
@@ -237,18 +235,19 @@ public class ProductCommandService {
 
     // ReservationSeat 서비스에 좌석 재생성 요청
     // TODO: 기존 좌석 삭제 API 호출 필요 (추후 구현)
-    List<SeatCreateRequest.SeatInfo> seatInfos = command.getSeatCreateInfos().stream()
-        .map(info -> SeatCreateRequest.SeatInfo.builder()
-            .seatNumber(info.seatNumber())
-            .grade(info.grade())
-            .price(info.price())
-            .build())
-        .collect(Collectors.toList());
+    List<SeatCreateRequest.SeatInfo> seatInfos =
+        command.getSeatCreateInfos().stream()
+            .map(
+                info ->
+                    SeatCreateRequest.SeatInfo.builder()
+                        .seatNumber(info.seatNumber())
+                        .grade(info.grade())
+                        .price(info.price())
+                        .build())
+            .collect(Collectors.toList());
 
-    SeatCreateRequest request = SeatCreateRequest.builder()
-        .productId(product.getId())
-        .seatCreateInfos(seatInfos)
-        .build();
+    SeatCreateRequest request =
+        SeatCreateRequest.builder().productId(product.getId()).seatCreateInfos(seatInfos).build();
 
     reservationSeatClient.createSeats(request);
     log.info("좌석 등급 수정 완료. productId: {}, newGrades: {}", product.getId(), gradeInfos.size());
@@ -331,8 +330,7 @@ public class ProductCommandService {
   /**
    * 상품을 판매 예정 상태로 변경한다.
    *
-   * <p>APPROVED 상태에서 SCHEDULED 상태로 변경한다.
-   * 예매 시작일이 다가오면 스케줄러가 호출한다.
+   * <p>APPROVED 상태에서 SCHEDULED 상태로 변경한다. 예매 시작일이 다가오면 스케줄러가 호출한다.
    *
    * @param productId 상품 ID
    * @throws ProductException 상품을 찾을 수 없는 경우
@@ -347,8 +345,7 @@ public class ProductCommandService {
   /**
    * 상품을 판매중 상태로 변경한다.
    *
-   * <p>SCHEDULED 상태에서 ON_SALE 상태로 변경한다.
-   * 예매 시작일이 되면 스케줄러가 호출한다.
+   * <p>SCHEDULED 상태에서 ON_SALE 상태로 변경한다. 예매 시작일이 되면 스케줄러가 호출한다.
    *
    * @param productId 상품 ID
    * @throws ProductException 상품을 찾을 수 없는 경우
@@ -363,8 +360,7 @@ public class ProductCommandService {
   /**
    * 상품의 판매를 종료한다.
    *
-   * <p>ON_SALE 상태에서 CLOSED 상태로 변경한다.
-   * 예매 종료일이 되거나 행사 시작일이 되면 스케줄러가 호출한다.
+   * <p>ON_SALE 상태에서 CLOSED 상태로 변경한다. 예매 종료일이 되거나 행사 시작일이 되면 스케줄러가 호출한다.
    *
    * @param productId 상품 ID
    * @throws ProductException 상품을 찾을 수 없는 경우
@@ -379,8 +375,7 @@ public class ProductCommandService {
   /**
    * 상품을 완료 상태로 변경한다.
    *
-   * <p>CLOSED 상태에서 COMPLETED 상태로 변경한다.
-   * 행사가 종료되면 스케줄러가 호출한다.
+   * <p>CLOSED 상태에서 COMPLETED 상태로 변경한다. 행사가 종료되면 스케줄러가 호출한다.
    *
    * @param productId 상품 ID
    * @throws ProductException 상품을 찾을 수 없는 경우
@@ -449,8 +444,7 @@ public class ProductCommandService {
   /**
    * 등급별 잔여 좌석을 차감한다.
    *
-   * <p>예매 시 호출된다. SeatGrade와 SeatSummary 모두 갱신된다.
-   * 동시성 제어를 위해 비관적 락을 사용한다.
+   * <p>예매 시 호출된다. SeatGrade와 SeatSummary 모두 갱신된다. 동시성 제어를 위해 비관적 락을 사용한다.
    *
    * @param productId 상품 ID
    * @param gradeName 등급명
@@ -468,8 +462,7 @@ public class ProductCommandService {
   /**
    * 등급별 잔여 좌석을 복구한다.
    *
-   * <p>예매 취소 시 호출된다. SeatGrade와 SeatSummary 모두 갱신된다.
-   * 동시성 제어를 위해 비관적 락을 사용한다.
+   * <p>예매 취소 시 호출된다. SeatGrade와 SeatSummary 모두 갱신된다. 동시성 제어를 위해 비관적 락을 사용한다.
    *
    * @param productId 상품 ID
    * @param gradeName 등급명
@@ -494,8 +487,7 @@ public class ProductCommandService {
    */
   @Async
   public void incrementViewCount(Long productId) {
-    productRepository.findById(productId)
-        .ifPresent(Product::incrementViewCount);
+    productRepository.findById(productId).ifPresent(Product::incrementViewCount);
   }
 
   /**
@@ -565,9 +557,7 @@ public class ProductCommandService {
     if (!command.hasAgeRestriction()) {
       return AgeRestriction.defaultRestriction();
     }
-    return new AgeRestriction(
-        command.getAgeRating(),
-        command.getRestrictionNotice());
+    return new AgeRestriction(command.getAgeRating(), command.getRestrictionNotice());
   }
 
   private BookingPolicy assembleBookingPolicy(ProductCreateCommand command) {
@@ -618,26 +608,31 @@ public class ProductCommandService {
   private ProductContent assembleContentFromUpdate(ProductUpdateCommand command, Product product) {
     ProductContent current = product.getContent();
     return new ProductContent(
-        command.getDescription() != null ? command.getDescription() :
-            (current != null ? current.getDescription() : null),
-        command.getPosterImageUrl() != null ? command.getPosterImageUrl() :
-            (current != null ? current.getPosterImageUrl() : null),
-        command.getDetailImageUrls() != null ? command.getDetailImageUrls() :
-            (current != null ? current.getDetailImageUrls() : null),
-        command.getCastInfo() != null ? command.getCastInfo() :
-            (current != null ? current.getCastInfo() : null),
-        command.getNotice() != null ? command.getNotice() :
-            (current != null ? current.getNotice() : null),
-        command.getOrganizer() != null ? command.getOrganizer() :
-            (current != null ? current.getOrganizer() : null),
-        command.getAgency() != null ? command.getAgency() :
-            (current != null ? current.getAgency() : null));
+        command.getDescription() != null
+            ? command.getDescription()
+            : (current != null ? current.getDescription() : null),
+        command.getPosterImageUrl() != null
+            ? command.getPosterImageUrl()
+            : (current != null ? current.getPosterImageUrl() : null),
+        command.getDetailImageUrls() != null
+            ? command.getDetailImageUrls()
+            : (current != null ? current.getDetailImageUrls() : null),
+        command.getCastInfo() != null
+            ? command.getCastInfo()
+            : (current != null ? current.getCastInfo() : null),
+        command.getNotice() != null
+            ? command.getNotice()
+            : (current != null ? current.getNotice() : null),
+        command.getOrganizer() != null
+            ? command.getOrganizer()
+            : (current != null ? current.getOrganizer() : null),
+        command.getAgency() != null
+            ? command.getAgency()
+            : (current != null ? current.getAgency() : null));
   }
 
   private AgeRestriction assembleAgeRestrictionFromUpdate(ProductUpdateCommand command) {
-    return new AgeRestriction(
-        command.getAgeRating(),
-        command.getRestrictionNotice());
+    return new AgeRestriction(command.getAgeRating(), command.getRestrictionNotice());
   }
 
   private BookingPolicy assembleBookingPolicyFromUpdate(ProductUpdateCommand command) {
@@ -674,18 +669,19 @@ public class ProductCommandService {
    * @param seatCreateInfos 개별 좌석 정보 리스트
    */
   private void createReservationSeats(Long productId, List<SeatCreateInfo> seatCreateInfos) {
-    List<SeatCreateRequest.SeatInfo> seatInfos = seatCreateInfos.stream()
-        .map(info -> SeatCreateRequest.SeatInfo.builder()
-            .seatNumber(info.seatNumber())
-            .grade(info.grade())
-            .price(info.price())
-            .build())
-        .collect(Collectors.toList());
+    List<SeatCreateRequest.SeatInfo> seatInfos =
+        seatCreateInfos.stream()
+            .map(
+                info ->
+                    SeatCreateRequest.SeatInfo.builder()
+                        .seatNumber(info.seatNumber())
+                        .grade(info.grade())
+                        .price(info.price())
+                        .build())
+            .collect(Collectors.toList());
 
-    SeatCreateRequest request = SeatCreateRequest.builder()
-        .productId(productId)
-        .seatCreateInfos(seatInfos)
-        .build();
+    SeatCreateRequest request =
+        SeatCreateRequest.builder().productId(productId).seatCreateInfos(seatInfos).build();
 
     reservationSeatClient.createSeats(request);
     log.info("ReservationSeat 생성 요청 완료. productId: {}, count: {}", productId, seatInfos.size());

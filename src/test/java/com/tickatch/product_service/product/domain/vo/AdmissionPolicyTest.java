@@ -17,9 +17,7 @@ class AdmissionPolicyTest {
 
     @Test
     void 유효한_값으로_생성할_수_있다() {
-      AdmissionPolicy policy = new AdmissionPolicy(
-          60, true, "인터미션 중 입장 가능",
-          true, 15, true, true);
+      AdmissionPolicy policy = new AdmissionPolicy(60, true, "인터미션 중 입장 가능", true, 15, true, true);
 
       assertThat(policy.getAdmissionMinutesBefore()).isEqualTo(60);
       assertThat(policy.getLateEntryAllowed()).isTrue();
@@ -32,8 +30,7 @@ class AdmissionPolicyTest {
 
     @Test
     void null_값은_기본값으로_설정된다() {
-      AdmissionPolicy policy = new AdmissionPolicy(
-          null, null, null, null, null, null, null);
+      AdmissionPolicy policy = new AdmissionPolicy(null, null, null, null, null, null, null);
 
       assertThat(policy.getAdmissionMinutesBefore()).isEqualTo(30);
       assertThat(policy.getLateEntryAllowed()).isFalse();
@@ -46,8 +43,7 @@ class AdmissionPolicyTest {
 
     @Test
     void 인터미션이_있을_때_인터미션_시간이_없으면_예외가_발생한다() {
-      assertThatThrownBy(() -> new AdmissionPolicy(
-          null, null, null, true, null, null, null))
+      assertThatThrownBy(() -> new AdmissionPolicy(null, null, null, true, null, null, null))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.INVALID_ADMISSION_POLICY);
@@ -55,14 +51,12 @@ class AdmissionPolicyTest {
 
     @Test
     void 인터미션이_있을_때_인터미션_시간이_0_이하면_예외가_발생한다() {
-      assertThatThrownBy(() -> new AdmissionPolicy(
-          null, null, null, true, 0, null, null))
+      assertThatThrownBy(() -> new AdmissionPolicy(null, null, null, true, 0, null, null))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.INVALID_ADMISSION_POLICY);
 
-      assertThatThrownBy(() -> new AdmissionPolicy(
-          null, null, null, true, -5, null, null))
+      assertThatThrownBy(() -> new AdmissionPolicy(null, null, null, true, -5, null, null))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.INVALID_ADMISSION_POLICY);
@@ -70,8 +64,7 @@ class AdmissionPolicyTest {
 
     @Test
     void 인터미션이_없으면_인터미션_시간이_없어도_생성된다() {
-      AdmissionPolicy policy = new AdmissionPolicy(
-          null, null, null, false, null, null, null);
+      AdmissionPolicy policy = new AdmissionPolicy(null, null, null, false, null, null, null);
 
       assertThat(policy.getHasIntermission()).isFalse();
       assertThat(policy.getIntermissionMinutes()).isNull();
@@ -79,8 +72,7 @@ class AdmissionPolicyTest {
 
     @Test
     void 입장_시작_시간이_음수이면_예외가_발생한다() {
-      assertThatThrownBy(() -> new AdmissionPolicy(
-          -1, null, null, null, null, null, null))
+      assertThatThrownBy(() -> new AdmissionPolicy(-1, null, null, null, null, null, null))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.INVALID_ADMISSION_POLICY);
@@ -88,8 +80,7 @@ class AdmissionPolicyTest {
 
     @Test
     void 입장_시작_시간이_0이면_생성에_성공한다() {
-      AdmissionPolicy policy = new AdmissionPolicy(
-          0, null, null, null, null, null, null);
+      AdmissionPolicy policy = new AdmissionPolicy(0, null, null, null, null, null, null);
 
       assertThat(policy.getAdmissionMinutesBefore()).isZero();
     }
@@ -98,8 +89,7 @@ class AdmissionPolicyTest {
     void 지각_입장_안내가_200자를_초과하면_예외가_발생한다() {
       String longNotice = "a".repeat(201);
 
-      assertThatThrownBy(() -> new AdmissionPolicy(
-          null, null, longNotice, null, null, null, null))
+      assertThatThrownBy(() -> new AdmissionPolicy(null, null, longNotice, null, null, null, null))
           .isInstanceOf(ProductException.class)
           .extracting(e -> ((ProductException) e).getErrorCode())
           .isEqualTo(ProductErrorCode.INVALID_ADMISSION_POLICY);
@@ -109,8 +99,7 @@ class AdmissionPolicyTest {
     void 지각_입장_안내가_200자이면_생성에_성공한다() {
       String maxNotice = "a".repeat(200);
 
-      AdmissionPolicy policy = new AdmissionPolicy(
-          null, null, maxNotice, null, null, null, null);
+      AdmissionPolicy policy = new AdmissionPolicy(null, null, maxNotice, null, null, null, null);
 
       assertThat(policy.getLateEntryNotice()).hasSize(200);
     }
@@ -138,16 +127,14 @@ class AdmissionPolicyTest {
 
     @Test
     void 지각_입장_가능_시_true를_반환한다() {
-      AdmissionPolicy policy = new AdmissionPolicy(
-          null, true, null, null, null, null, null);
+      AdmissionPolicy policy = new AdmissionPolicy(null, true, null, null, null, null, null);
 
       assertThat(policy.allowsLateEntry()).isTrue();
     }
 
     @Test
     void 지각_입장_불가_시_false를_반환한다() {
-      AdmissionPolicy policy = new AdmissionPolicy(
-          null, false, null, null, null, null, null);
+      AdmissionPolicy policy = new AdmissionPolicy(null, false, null, null, null, null, null);
 
       assertThat(policy.allowsLateEntry()).isFalse();
     }
@@ -158,16 +145,14 @@ class AdmissionPolicyTest {
 
     @Test
     void 인터미션이_있으면_true를_반환한다() {
-      AdmissionPolicy policy = new AdmissionPolicy(
-          null, null, null, true, 15, null, null);
+      AdmissionPolicy policy = new AdmissionPolicy(null, null, null, true, 15, null, null);
 
       assertThat(policy.hasIntermission()).isTrue();
     }
 
     @Test
     void 인터미션이_없으면_false를_반환한다() {
-      AdmissionPolicy policy = new AdmissionPolicy(
-          null, null, null, false, null, null, null);
+      AdmissionPolicy policy = new AdmissionPolicy(null, null, null, false, null, null, null);
 
       assertThat(policy.hasIntermission()).isFalse();
     }
@@ -178,16 +163,14 @@ class AdmissionPolicyTest {
 
     @Test
     void 촬영_가능_시_true를_반환한다() {
-      AdmissionPolicy policy = new AdmissionPolicy(
-          null, null, null, null, null, true, null);
+      AdmissionPolicy policy = new AdmissionPolicy(null, null, null, null, null, true, null);
 
       assertThat(policy.allowsPhotography()).isTrue();
     }
 
     @Test
     void 활영_불가_시_false를_반환한다() {
-      AdmissionPolicy policy = new AdmissionPolicy(
-          null, null, null, null, null, false, null);
+      AdmissionPolicy policy = new AdmissionPolicy(null, null, null, null, null, false, null);
 
       assertThat(policy.allowsPhotography()).isFalse();
     }
@@ -198,16 +181,14 @@ class AdmissionPolicyTest {
 
     @Test
     void 음식물_반입_가능_시_true를_반환한다() {
-      AdmissionPolicy policy = new AdmissionPolicy(
-          null, null, null, null, null, null, true);
+      AdmissionPolicy policy = new AdmissionPolicy(null, null, null, null, null, null, true);
 
       assertThat(policy.allowsFood()).isTrue();
     }
 
     @Test
     void 음식물_반입_불가_시_false를_반환한다() {
-      AdmissionPolicy policy = new AdmissionPolicy(
-          null, null, null, null, null, null, false);
+      AdmissionPolicy policy = new AdmissionPolicy(null, null, null, null, null, null, false);
 
       assertThat(policy.allowsFood()).isFalse();
     }
@@ -218,10 +199,8 @@ class AdmissionPolicyTest {
 
     @Test
     void 같은_값을_가진_객체는_동등하다() {
-      AdmissionPolicy policy1 = new AdmissionPolicy(
-          30, true, "안내", true, 15, true, false);
-      AdmissionPolicy policy2 = new AdmissionPolicy(
-          30, true, "안내", true, 15, true, false);
+      AdmissionPolicy policy1 = new AdmissionPolicy(30, true, "안내", true, 15, true, false);
+      AdmissionPolicy policy2 = new AdmissionPolicy(30, true, "안내", true, 15, true, false);
 
       assertThat(policy1).isEqualTo(policy2);
       assertThat(policy1.hashCode()).isEqualTo(policy2.hashCode());
@@ -229,10 +208,8 @@ class AdmissionPolicyTest {
 
     @Test
     void 다른_값을_가진_객체는_동등하지_않다() {
-      AdmissionPolicy policy1 = new AdmissionPolicy(
-          30, true, null, false, null, null, null);
-      AdmissionPolicy policy2 = new AdmissionPolicy(
-          60, true, null, false, null, null, null);
+      AdmissionPolicy policy1 = new AdmissionPolicy(30, true, null, false, null, null, null);
+      AdmissionPolicy policy2 = new AdmissionPolicy(60, true, null, false, null, null, null);
 
       assertThat(policy1).isNotEqualTo(policy2);
     }

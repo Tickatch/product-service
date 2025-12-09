@@ -5,8 +5,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
 import com.tickatch.product_service.product.domain.exception.ProductException;
+import com.tickatch.product_service.product.domain.vo.AdmissionPolicy;
+import com.tickatch.product_service.product.domain.vo.AgeRating;
+import com.tickatch.product_service.product.domain.vo.AgeRestriction;
+import com.tickatch.product_service.product.domain.vo.BookingPolicy;
+import com.tickatch.product_service.product.domain.vo.ProductContent;
 import com.tickatch.product_service.product.domain.vo.ProductStatus;
 import com.tickatch.product_service.product.domain.vo.ProductType;
+import com.tickatch.product_service.product.domain.vo.RefundPolicy;
 import com.tickatch.product_service.product.domain.vo.SaleSchedule;
 import com.tickatch.product_service.product.domain.vo.Schedule;
 import com.tickatch.product_service.product.domain.vo.Venue;
@@ -30,6 +36,13 @@ class ProductTest {
   private SaleSchedule startedSaleSchedule;
   private Venue defaultVenue;
 
+  // 콘텐츠/정책 VO
+  private ProductContent defaultContent;
+  private AgeRestriction defaultAgeRestriction;
+  private BookingPolicy defaultBookingPolicy;
+  private AdmissionPolicy defaultAdmissionPolicy;
+  private RefundPolicy defaultRefundPolicy;
+
   @BeforeEach
   void setUp() {
     futureSchedule =
@@ -41,11 +54,17 @@ class ProductTest {
     futureSaleSchedule =
         new SaleSchedule(LocalDateTime.now().plusDays(1), LocalDateTime.now().plusDays(29));
 
-    // 이미 시작된 행사용 예매 일정 (이미 종료된 예매)
     startedSaleSchedule =
         new SaleSchedule(LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(2));
 
     defaultVenue = new Venue(1L, "올림픽홀", 100L, "올림픽공원", "서울시 송파구");
+
+    // 콘텐츠/정책 기본값 설정
+    defaultContent = ProductContent.empty();
+    defaultAgeRestriction = AgeRestriction.defaultRestriction();
+    defaultBookingPolicy = BookingPolicy.defaultPolicy();
+    defaultAdmissionPolicy = AdmissionPolicy.defaultPolicy();
+    defaultRefundPolicy = RefundPolicy.defaultPolicy();
   }
 
   @Nested
@@ -61,7 +80,12 @@ class ProductTest {
               DEFAULT_RUNNING_TIME,
               futureSchedule,
               futureSaleSchedule,
-              defaultVenue);
+              defaultVenue,
+              defaultContent,
+              defaultAgeRestriction,
+              defaultBookingPolicy,
+              defaultAdmissionPolicy,
+              defaultRefundPolicy);
 
       assertThat(product.getSellerId()).isEqualTo(DEFAULT_SELLER_ID);
       assertThat(product.getName()).isEqualTo(DEFAULT_PRODUCT_NAME);
@@ -98,6 +122,32 @@ class ProductTest {
       assertThat(product.getStats().getReservationCount()).isEqualTo(0);
     }
 
+    @Test
+    void 생성_시_콘텐츠는_빈_상태로_초기화된다() {
+      Product product = createDefaultProduct();
+
+      assertThat(product.getContent()).isNotNull();
+      assertThat(product.getContent().getDescription()).isNull();
+      assertThat(product.getContent().getPosterImageUrl()).isNull();
+    }
+
+    @Test
+    void 생성_시_정책들은_기본값으로_초기화된다() {
+      Product product = createDefaultProduct();
+
+      assertThat(product.getAgeRestriction().getAgeRating()).isEqualTo(AgeRating.ALL);
+      assertThat(product.getBookingPolicy().getMaxTicketsPerPerson()).isEqualTo(4);
+      assertThat(product.getAdmissionPolicy().getAdmissionMinutesBefore()).isEqualTo(30);
+      assertThat(product.getRefundPolicy().getCancellable()).isTrue();
+    }
+
+    @Test
+    void 생성_시_좌석_등급_리스트는_빈_상태로_초기화된다() {
+      Product product = createDefaultProduct();
+
+      assertThat(product.getSeatGrades()).isEmpty();
+    }
+
     @Nested
     class 일정_조회_테스트 {
 
@@ -115,7 +165,12 @@ class ProductTest {
                 DEFAULT_RUNNING_TIME,
                 schedule,
                 futureSaleSchedule,
-                defaultVenue);
+                defaultVenue,
+                defaultContent,
+                defaultAgeRestriction,
+                defaultBookingPolicy,
+                defaultAdmissionPolicy,
+                defaultRefundPolicy);
 
         assertThat(product.getStartAt()).isEqualTo(startAt);
       }
@@ -134,7 +189,12 @@ class ProductTest {
                 DEFAULT_RUNNING_TIME,
                 schedule,
                 futureSaleSchedule,
-                defaultVenue);
+                defaultVenue,
+                defaultContent,
+                defaultAgeRestriction,
+                defaultBookingPolicy,
+                defaultAdmissionPolicy,
+                defaultRefundPolicy);
 
         assertThat(product.getEndAt()).isEqualTo(endAt);
       }
@@ -168,7 +228,12 @@ class ProductTest {
                         DEFAULT_RUNNING_TIME,
                         futureSchedule,
                         futureSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_SELLER_ID);
@@ -185,7 +250,12 @@ class ProductTest {
                         DEFAULT_RUNNING_TIME,
                         futureSchedule,
                         futureSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_SELLER_ID);
@@ -202,7 +272,12 @@ class ProductTest {
                         DEFAULT_RUNNING_TIME,
                         futureSchedule,
                         futureSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_SELLER_ID);
@@ -223,7 +298,12 @@ class ProductTest {
                         DEFAULT_RUNNING_TIME,
                         futureSchedule,
                         futureSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_PRODUCT_NAME);
@@ -240,7 +320,12 @@ class ProductTest {
                         DEFAULT_RUNNING_TIME,
                         futureSchedule,
                         futureSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_PRODUCT_NAME);
@@ -257,7 +342,12 @@ class ProductTest {
                         DEFAULT_RUNNING_TIME,
                         futureSchedule,
                         futureSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_PRODUCT_NAME);
@@ -276,7 +366,12 @@ class ProductTest {
                         DEFAULT_RUNNING_TIME,
                         futureSchedule,
                         futureSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_PRODUCT_NAME);
@@ -294,7 +389,12 @@ class ProductTest {
                 DEFAULT_RUNNING_TIME,
                 futureSchedule,
                 futureSaleSchedule,
-                defaultVenue);
+                defaultVenue,
+                defaultContent,
+                defaultAgeRestriction,
+                defaultBookingPolicy,
+                defaultAdmissionPolicy,
+                defaultRefundPolicy);
 
         assertThat(product.getName()).isEqualTo(exactName);
       }
@@ -314,7 +414,12 @@ class ProductTest {
                         DEFAULT_RUNNING_TIME,
                         futureSchedule,
                         futureSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_PRODUCT_TYPE);
@@ -335,7 +440,12 @@ class ProductTest {
                         null,
                         futureSchedule,
                         futureSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_RUNNING_TIME);
@@ -352,7 +462,12 @@ class ProductTest {
                         0,
                         futureSchedule,
                         futureSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_RUNNING_TIME);
@@ -369,7 +484,12 @@ class ProductTest {
                         -1,
                         futureSchedule,
                         futureSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_RUNNING_TIME);
@@ -390,7 +510,12 @@ class ProductTest {
                         DEFAULT_RUNNING_TIME,
                         null,
                         futureSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_SCHEDULE);
@@ -407,7 +532,12 @@ class ProductTest {
                         DEFAULT_RUNNING_TIME,
                         futureSchedule,
                         null,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_SALE_SCHEDULE);
@@ -429,7 +559,12 @@ class ProductTest {
                         DEFAULT_RUNNING_TIME,
                         eventSchedule,
                         invalidSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.SALE_MUST_START_BEFORE_EVENT);
@@ -450,7 +585,12 @@ class ProductTest {
                         DEFAULT_RUNNING_TIME,
                         eventSchedule,
                         invalidSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.SALE_MUST_START_BEFORE_EVENT);
@@ -472,7 +612,12 @@ class ProductTest {
                         DEFAULT_RUNNING_TIME,
                         eventSchedule,
                         invalidSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.SALE_MUST_END_BEFORE_EVENT);
@@ -494,7 +639,12 @@ class ProductTest {
                         DEFAULT_RUNNING_TIME,
                         eventSchedule,
                         invalidSaleSchedule,
-                        defaultVenue))
+                        defaultVenue,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.SALE_MUST_END_BEFORE_EVENT);
@@ -515,7 +665,12 @@ class ProductTest {
                         DEFAULT_RUNNING_TIME,
                         futureSchedule,
                         futureSaleSchedule,
-                        null))
+                        null,
+                        defaultContent,
+                        defaultAgeRestriction,
+                        defaultBookingPolicy,
+                        defaultAdmissionPolicy,
+                        defaultRefundPolicy))
             .isInstanceOf(ProductException.class)
             .extracting(e -> ((ProductException) e).getErrorCode())
             .isEqualTo(ProductErrorCode.INVALID_VENUE);
@@ -603,6 +758,377 @@ class ProductTest {
   }
 
   @Nested
+  class 콘텐츠_수정_테스트 {
+
+    @Test
+    void DRAFT_상태에서_콘텐츠를_수정할_수_있다() {
+      Product product = createDefaultProduct();
+      ProductContent content =
+          new ProductContent(
+              "상세 설명", "https://example.com/poster.jpg", null, "출연진", "유의사항", "주최사", "주관사");
+
+      product.updateContent(content);
+
+      assertThat(product.getContent().getDescription()).isEqualTo("상세 설명");
+      assertThat(product.getContent().getPosterImageUrl())
+          .isEqualTo("https://example.com/poster.jpg");
+    }
+
+    @Test
+    void REJECTED_상태에서_콘텐츠를_수정할_수_있다() {
+      Product product = createRejectedProduct();
+      ProductContent content =
+          new ProductContent(
+              "수정된 설명", "https://example.com/new-poster.jpg", null, null, null, null, null);
+
+      product.updateContent(content);
+
+      assertThat(product.getContent().getDescription()).isEqualTo("수정된 설명");
+    }
+
+    @Test
+    void PENDING_상태에서_콘텐츠를_수정할_수_없다() {
+      Product product = createDefaultProduct();
+      product.changeStatus(ProductStatus.PENDING);
+      ProductContent content = new ProductContent("수정된 설명", null, null, null, null, null, null);
+
+      assertThatThrownBy(() -> product.updateContent(content))
+          .isInstanceOf(ProductException.class)
+          .extracting(e -> ((ProductException) e).getErrorCode())
+          .isEqualTo(ProductErrorCode.PRODUCT_NOT_EDITABLE);
+    }
+
+    @Test
+    void null_콘텐츠로_수정하면_빈_콘텐츠로_초기화된다() {
+      Product product = createDefaultProduct();
+      ProductContent content =
+          new ProductContent("설명", "https://example.com/poster.jpg", null, null, null, null, null);
+      product.updateContent(content);
+
+      product.updateContent(null);
+
+      assertThat(product.getContent().getDescription()).isNull();
+      assertThat(product.getContent().getPosterImageUrl()).isNull();
+    }
+  }
+
+  @Nested
+  class 관람_제한_수정_테스트 {
+
+    @Test
+    void DRAFT_상태에서_관람_제한을_수정할_수_있다() {
+      Product product = createDefaultProduct();
+      AgeRestriction restriction = new AgeRestriction(AgeRating.NINETEEN, "성인 전용");
+
+      product.updateAgeRestriction(restriction);
+
+      assertThat(product.getAgeRestriction().getAgeRating()).isEqualTo(AgeRating.NINETEEN);
+      assertThat(product.getAgeRestriction().getRestrictionNotice()).isEqualTo("성인 전용");
+    }
+
+    @Test
+    void null로_수정하면_기본_제한으로_초기화된다() {
+      Product product = createDefaultProduct();
+      product.updateAgeRestriction(new AgeRestriction(AgeRating.FIFTEEN, "15세 이상"));
+
+      product.updateAgeRestriction(null);
+
+      assertThat(product.getAgeRestriction().getAgeRating()).isEqualTo(AgeRating.ALL);
+    }
+  }
+
+  @Nested
+  class 예매_정책_수정_테스트 {
+
+    @Test
+    void DRAFT_상태에서_예매_정책을_수정할_수_있다() {
+      Product product = createDefaultProduct();
+      BookingPolicy policy = new BookingPolicy(2, true, false);
+
+      product.updateBookingPolicy(policy);
+
+      assertThat(product.getBookingPolicy().getMaxTicketsPerPerson()).isEqualTo(2);
+      assertThat(product.getBookingPolicy().getIdVerificationRequired()).isTrue();
+      assertThat(product.getBookingPolicy().getTransferable()).isFalse();
+    }
+
+    @Test
+    void null로_수정하면_기본_정책으로_초기화된다() {
+      Product product = createDefaultProduct();
+      product.updateBookingPolicy(new BookingPolicy(2, true, false));
+
+      product.updateBookingPolicy(null);
+
+      assertThat(product.getBookingPolicy().getMaxTicketsPerPerson()).isEqualTo(4);
+    }
+  }
+
+  @Nested
+  class 입장_정책_수정_테스트 {
+
+    @Test
+    void DRAFT_상태에서_입장_정책을_수정할_수_있다() {
+      Product product = createDefaultProduct();
+      AdmissionPolicy policy = new AdmissionPolicy(60, true, "인터미션 입장 가능", true, 15, true, false);
+
+      product.updateAdmissionPolicy(policy);
+
+      assertThat(product.getAdmissionPolicy().getAdmissionMinutesBefore()).isEqualTo(60);
+      assertThat(product.getAdmissionPolicy().hasIntermission()).isTrue();
+      assertThat(product.getAdmissionPolicy().getIntermissionMinutes()).isEqualTo(15);
+    }
+
+    @Test
+    void null로_수정하면_기본_정책으로_초기화된다() {
+      Product product = createDefaultProduct();
+      product.updateAdmissionPolicy(new AdmissionPolicy(60, true, null, true, 15, true, true));
+
+      product.updateAdmissionPolicy(null);
+
+      assertThat(product.getAdmissionPolicy().getAdmissionMinutesBefore()).isEqualTo(30);
+    }
+  }
+
+  @Nested
+  class 환불_정책_수정_테스트 {
+
+    @Test
+    void DRAFT_상태에서_환불_정책을_수정할_수_있다() {
+      Product product = createDefaultProduct();
+      RefundPolicy policy = new RefundPolicy(true, 7, "7일 전까지 전액 환불");
+
+      product.updateRefundPolicy(policy);
+
+      assertThat(product.getRefundPolicy().getCancelDeadlineDays()).isEqualTo(7);
+      assertThat(product.getRefundPolicy().getRefundPolicyText()).isEqualTo("7일 전까지 전액 환불");
+    }
+
+    @Test
+    void null로_수정하면_기본_정책으로_초기화된다() {
+      Product product = createDefaultProduct();
+      product.updateRefundPolicy(RefundPolicy.nonRefundable());
+
+      product.updateRefundPolicy(null);
+
+      assertThat(product.getRefundPolicy().getCancellable()).isTrue();
+      assertThat(product.getRefundPolicy().getCancelDeadlineDays()).isEqualTo(1);
+    }
+  }
+
+  @Nested
+  class 좌석_등급_테스트 {
+
+    @Nested
+    class 좌석_등급_추가_테스트 {
+
+      @Test
+      void DRAFT_상태에서_좌석_등급을_추가할_수_있다() {
+        Product product = createDefaultProduct();
+
+        SeatGrade vip = product.addSeatGrade("VIP", 150000L, 100, 1);
+        SeatGrade r = product.addSeatGrade("R석", 120000L, 200, 2);
+
+        assertThat(product.getSeatGrades()).hasSize(2);
+        assertThat(r.getGradeName()).isEqualTo("R석");
+        assertThat(vip.getGradeName()).isEqualTo("VIP");
+        assertThat(vip.getPrice()).isEqualTo(150000L);
+        assertThat(vip.getTotalSeats()).isEqualTo(100);
+        assertThat(vip.getAvailableSeats()).isEqualTo(100);
+      }
+
+      @Test
+      void 좌석_등급_추가시_SeatSummary가_자동_재계산된다() {
+        Product product = createDefaultProduct();
+
+        product.addSeatGrade("VIP", 150000L, 100, 1);
+        product.addSeatGrade("R석", 120000L, 200, 2);
+
+        assertThat(product.getSeatSummary().getTotalSeats()).isEqualTo(300);
+        assertThat(product.getSeatSummary().getAvailableSeats()).isEqualTo(300);
+      }
+
+      @Test
+      void REJECTED_상태에서_좌석_등급을_추가할_수_있다() {
+        Product product = createRejectedProduct();
+
+        SeatGrade seatGrade = product.addSeatGrade("VIP", 150000L, 100, 1);
+
+        assertThat(product.getSeatGrades()).hasSize(1);
+        assertThat(seatGrade.getGradeName()).isEqualTo("VIP");
+      }
+
+      @Test
+      void PENDING_상태에서_좌석_등급을_추가할_수_없다() {
+        Product product = createDefaultProduct();
+        product.changeStatus(ProductStatus.PENDING);
+
+        assertThatThrownBy(() -> product.addSeatGrade("VIP", 150000L, 100, 1))
+            .isInstanceOf(ProductException.class)
+            .extracting(e -> ((ProductException) e).getErrorCode())
+            .isEqualTo(ProductErrorCode.PRODUCT_NOT_EDITABLE);
+      }
+    }
+
+    // JPA 테스트로 이전
+    //    @Nested
+    //    class 좌석_등급_제거_테스트 {
+    //
+    //      @Test
+    //      void DRAFT_상태에서_좌석_등급을_제거할_수_있다() {
+    //        Product product = createDefaultProduct();
+    //        SeatGrade vip = product.addSeatGrade("VIP", 150000L, 100, 1);
+    //        product.addSeatGrade("R석", 120000L, 200, 2);
+    //
+    //        product.removeSeatGrade(vip.getId());
+    //
+    //        assertThat(product.getSeatGrades()).hasSize(1);
+    //        assertThat(product.getSeatGrades().get(0).getGradeName()).isEqualTo("R석");
+    //      }
+    //
+    //      @Test
+    //      void 좌석_등급_제거시_SeatSummary가_자동_재계산된다() {
+    //        Product product = createDefaultProduct();
+    //        SeatGrade vip = product.addSeatGrade("VIP", 150000L, 100, 1);
+    //        product.addSeatGrade("R석", 120000L, 200, 2);
+    //
+    //        product.removeSeatGrade(vip.getId());
+    //
+    //        assertThat(product.getSeatSummary().getTotalSeats()).isEqualTo(200);
+    //        assertThat(product.getSeatSummary().getAvailableSeats()).isEqualTo(200);
+    //      }
+    //
+    //      @Test
+    //      void 존재하지_않는_좌석_등급_제거시_예외가_발생한다() {
+    //        Product product = createDefaultProduct();
+    //        product.addSeatGrade("VIP", 150000L, 100, 1);
+    //
+    //        assertThatThrownBy(() -> product.removeSeatGrade(999L))
+    //            .isInstanceOf(ProductException.class)
+    //            .extracting(e -> ((ProductException) e).getErrorCode())
+    //            .isEqualTo(ProductErrorCode.SEAT_GRADE_NOT_FOUND);
+    //      }
+    //    }
+
+    @Nested
+    class 등급별_좌석_차감_복구_테스트 {
+
+      @Test
+      void 등급별_잔여_좌석을_차감할_수_있다() {
+        Product product = createDefaultProduct();
+        product.addSeatGrade("VIP", 150000L, 100, 1);
+        product.addSeatGrade("R석", 120000L, 200, 2);
+
+        product.decreaseSeatGradeAvailable("VIP", 10);
+
+        SeatGrade vip =
+            product.getSeatGrades().stream()
+                .filter(sg -> sg.getGradeName().equals("VIP"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(vip.getAvailableSeats()).isEqualTo(90);
+        assertThat(product.getSeatSummary().getAvailableSeats()).isEqualTo(290);
+      }
+
+      @Test
+      void 등급별_잔여_좌석을_복구할_수_있다() {
+        Product product = createDefaultProduct();
+        product.addSeatGrade("VIP", 150000L, 100, 1);
+        product.decreaseSeatGradeAvailable("VIP", 10);
+
+        product.increaseSeatGradeAvailable("VIP", 5);
+
+        SeatGrade vip = product.getSeatGrades().get(0);
+        assertThat(vip.getAvailableSeats()).isEqualTo(95);
+        assertThat(product.getSeatSummary().getAvailableSeats()).isEqualTo(95);
+      }
+
+      @Test
+      void 존재하지_않는_등급의_좌석_차감시_예외가_발생한다() {
+        Product product = createDefaultProduct();
+        product.addSeatGrade("VIP", 150000L, 100, 1);
+
+        assertThatThrownBy(() -> product.decreaseSeatGradeAvailable("S석", 10))
+            .isInstanceOf(ProductException.class)
+            .extracting(e -> ((ProductException) e).getErrorCode())
+            .isEqualTo(ProductErrorCode.SEAT_GRADE_NOT_FOUND);
+      }
+
+      @Test
+      void 존재하지_않는_등급의_좌석_복구시_예외가_발생한다() {
+        Product product = createDefaultProduct();
+        product.addSeatGrade("VIP", 150000L, 100, 1);
+
+        assertThatThrownBy(() -> product.increaseSeatGradeAvailable("S석", 10))
+            .isInstanceOf(ProductException.class)
+            .extracting(e -> ((ProductException) e).getErrorCode())
+            .isEqualTo(ProductErrorCode.SEAT_GRADE_NOT_FOUND);
+      }
+    }
+
+    @Test
+    void getSeatGrades는_읽기_전용_리스트를_반환한다() {
+      Product product = createDefaultProduct();
+      product.addSeatGrade("VIP", 150000L, 100, 1);
+
+      assertThatThrownBy(() -> product.getSeatGrades().add(null))
+          .isInstanceOf(UnsupportedOperationException.class);
+    }
+  }
+
+  @Nested
+  class 심사_제출_가능_여부_테스트 {
+
+    @Test
+    void 필수_콘텐츠가_있으면_심사_제출_가능하다() {
+      Product product = createDefaultProduct();
+      ProductContent content =
+          new ProductContent(
+              "상세 설명", "https://example.com/poster.jpg", null, null, null, null, null);
+      product.updateContent(content);
+
+      assertThat(product.canSubmitForApproval()).isTrue();
+    }
+
+    @Test
+    void 콘텐츠가_비어있으면_심사_제출_불가능하다() {
+      Product product = createDefaultProduct();
+
+      assertThat(product.canSubmitForApproval()).isFalse();
+    }
+
+    @Test
+    void description이_없으면_심사_제출_불가능하다() {
+      Product product = createDefaultProduct();
+      ProductContent content =
+          new ProductContent(null, "https://example.com/poster.jpg", null, null, null, null, null);
+      product.updateContent(content);
+
+      assertThat(product.canSubmitForApproval()).isFalse();
+    }
+
+    @Test
+    void posterImageUrl이_없으면_심사_제출_불가능하다() {
+      Product product = createDefaultProduct();
+      ProductContent content = new ProductContent("상세 설명", null, null, null, null, null, null);
+      product.updateContent(content);
+
+      assertThat(product.canSubmitForApproval()).isFalse();
+    }
+
+    @Test
+    void DRAFT_상태가_아니면_심사_제출_불가능하다() {
+      Product product = createDefaultProduct();
+      ProductContent content =
+          new ProductContent(
+              "상세 설명", "https://example.com/poster.jpg", null, null, null, null, null);
+      product.updateContent(content);
+      product.changeStatus(ProductStatus.PENDING);
+
+      assertThat(product.canSubmitForApproval()).isFalse();
+    }
+  }
+
+  @Nested
   class 장소_변경_테스트 {
 
     @Test
@@ -626,7 +1152,12 @@ class ProductTest {
               DEFAULT_RUNNING_TIME,
               startedSchedule,
               startedSaleSchedule,
-              defaultVenue);
+              defaultVenue,
+              defaultContent,
+              defaultAgeRestriction,
+              defaultBookingPolicy,
+              defaultAdmissionPolicy,
+              defaultRefundPolicy);
       Venue newVenue = new Venue(2L, "대공연장", 200L, "세종문화회관", "서울시 종로구");
 
       assertThatThrownBy(() -> product.changeVenue(newVenue))
@@ -1292,7 +1823,12 @@ class ProductTest {
         DEFAULT_RUNNING_TIME,
         futureSchedule,
         futureSaleSchedule,
-        defaultVenue);
+        defaultVenue,
+        defaultContent,
+        defaultAgeRestriction,
+        defaultBookingPolicy,
+        defaultAdmissionPolicy,
+        defaultRefundPolicy);
   }
 
   private Product createApprovedProduct() {

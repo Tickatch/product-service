@@ -75,11 +75,7 @@ public class SeatGrade extends AbstractTimeEntity {
   private Integer displayOrder;
 
   private SeatGrade(
-      Product product,
-      String gradeName,
-      Long price,
-      Integer totalSeats,
-      Integer displayOrder) {
+      Product product, String gradeName, Long price, Integer totalSeats, Integer displayOrder) {
     this.product = product;
     this.gradeName = gradeName;
     this.price = price;
@@ -102,11 +98,7 @@ public class SeatGrade extends AbstractTimeEntity {
    * @throws ProductException 유효성 검증 실패 시
    */
   public static SeatGrade create(
-      Product product,
-      String gradeName,
-      Long price,
-      Integer totalSeats,
-      Integer displayOrder) {
+      Product product, String gradeName, Long price, Integer totalSeats, Integer displayOrder) {
     validateProduct(product);
     validateGradeName(gradeName);
     validatePrice(price);

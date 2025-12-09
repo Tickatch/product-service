@@ -55,10 +55,7 @@ public final class RefundPolicy {
    * @param refundPolicyText 환불 정책 상세 안내
    * @throws ProductException 유효성 검증 실패 시 ({@link ProductErrorCode#INVALID_REFUND_POLICY})
    */
-  public RefundPolicy(
-      Boolean cancellable,
-      Integer cancelDeadlineDays,
-      String refundPolicyText) {
+  public RefundPolicy(Boolean cancellable, Integer cancelDeadlineDays, String refundPolicyText) {
     validate(cancelDeadlineDays, refundPolicyText);
 
     this.cancellable = cancellable != null ? cancellable : true;

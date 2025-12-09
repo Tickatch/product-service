@@ -10,8 +10,7 @@ import lombok.Getter;
 /**
  * 상품 생성 명령 객체.
  *
- * <p>상품 생성에 필요한 모든 정보를 담는다. 서비스 레이어에서 이 정보를 바탕으로
- * 각 VO를 조립하여 도메인에 전달한다.
+ * <p>상품 생성에 필요한 모든 정보를 담는다. 서비스 레이어에서 이 정보를 바탕으로 각 VO를 조립하여 도메인에 전달한다.
  *
  * <p>값객체는 세트 단위로 검증된다. 일부 필드만 있으면 검증 실패.
  *
@@ -232,6 +231,7 @@ public class ProductCreateCommand {
    * 좌석 정보 정합성을 검증한다.
    *
    * <p>SeatGradeInfo의 totalSeats 합과 SeatCreateInfo 개수가 일치해야 한다.
+   *
    * <p>SeatCreateInfo의 grade가 SeatGradeInfo에 존재해야 한다.
    *
    * @throws IllegalArgumentException 정합성이 맞지 않는 경우
@@ -242,19 +242,16 @@ public class ProductCreateCommand {
     }
 
     // totalSeats 합 vs seatCreateInfos 개수
-    int totalSeatsSum = seatGradeInfos.stream()
-        .mapToInt(SeatGradeInfo::totalSeats)
-        .sum();
+    int totalSeatsSum = seatGradeInfos.stream().mapToInt(SeatGradeInfo::totalSeats).sum();
     if (totalSeatsSum != seatCreateInfos.size()) {
       throw new IllegalArgumentException(
-          String.format("좌석 수 불일치: SeatGradeInfo 총합=%d, SeatCreateInfo 개수=%d",
+          String.format(
+              "좌석 수 불일치: SeatGradeInfo 총합=%d, SeatCreateInfo 개수=%d",
               totalSeatsSum, seatCreateInfos.size()));
     }
 
     // grade 존재 여부 검증
-    List<String> validGrades = seatGradeInfos.stream()
-        .map(SeatGradeInfo::gradeName)
-        .toList();
+    List<String> validGrades = seatGradeInfos.stream().map(SeatGradeInfo::gradeName).toList();
     for (SeatCreateInfo info : seatCreateInfos) {
       if (!validGrades.contains(info.grade())) {
         throw new IllegalArgumentException(
@@ -264,14 +261,14 @@ public class ProductCreateCommand {
 
     // grade별 가격 일치 검증
     for (SeatGradeInfo gradeInfo : seatGradeInfos) {
-      List<SeatCreateInfo> seatsOfGrade = seatCreateInfos.stream()
-          .filter(s -> s.grade().equals(gradeInfo.gradeName()))
-          .toList();
+      List<SeatCreateInfo> seatsOfGrade =
+          seatCreateInfos.stream().filter(s -> s.grade().equals(gradeInfo.gradeName())).toList();
 
       for (SeatCreateInfo seat : seatsOfGrade) {
         if (!seat.price().equals(gradeInfo.price())) {
           throw new IllegalArgumentException(
-              String.format("가격 불일치: 등급 %s의 가격은 %d이어야 하지만 좌석 %s의 가격은 %d입니다.",
+              String.format(
+                  "가격 불일치: 등급 %s의 가격은 %d이어야 하지만 좌석 %s의 가격은 %d입니다.",
                   gradeInfo.gradeName(), gradeInfo.price(), seat.seatNumber(), seat.price()));
         }
       }
@@ -279,7 +276,8 @@ public class ProductCreateCommand {
       // grade별 좌석 수 일치 검증
       if (seatsOfGrade.size() != gradeInfo.totalSeats()) {
         throw new IllegalArgumentException(
-            String.format("좌석 수 불일치: 등급 %s의 totalSeats=%d이지만 실제 좌석 수=%d",
+            String.format(
+                "좌석 수 불일치: 등급 %s의 totalSeats=%d이지만 실제 좌석 수=%d",
                 gradeInfo.gradeName(), gradeInfo.totalSeats(), seatsOfGrade.size()));
       }
     }
@@ -288,8 +286,13 @@ public class ProductCreateCommand {
   // ========== 존재 여부 확인 ==========
 
   public boolean hasContent() {
-    return description != null || posterImageUrl != null || detailImageUrls != null
-        || castInfo != null || notice != null || organizer != null || agency != null;
+    return description != null
+        || posterImageUrl != null
+        || detailImageUrls != null
+        || castInfo != null
+        || notice != null
+        || organizer != null
+        || agency != null;
   }
 
   public boolean hasAgeRestriction() {
@@ -301,8 +304,12 @@ public class ProductCreateCommand {
   }
 
   public boolean hasAdmissionPolicy() {
-    return admissionMinutesBefore != null || lateEntryAllowed != null || lateEntryNotice != null
-        || hasIntermission != null || intermissionMinutes != null || photographyAllowed != null
+    return admissionMinutesBefore != null
+        || lateEntryAllowed != null
+        || lateEntryNotice != null
+        || hasIntermission != null
+        || intermissionMinutes != null
+        || photographyAllowed != null
         || foodAllowed != null;
   }
 
@@ -335,18 +342,13 @@ public class ProductCreateCommand {
   /**
    * 좌석 등급 정보.
    *
-   * <p>Product의 SeatGrade 생성에 사용된다.
-   * 배열 순서대로 displayOrder가 부여된다.
+   * <p>Product의 SeatGrade 생성에 사용된다. 배열 순서대로 displayOrder가 부여된다.
    *
    * @param gradeName 등급명 (예: "VIP", "R", "S")
    * @param price 가격
    * @param totalSeats 총 좌석수
    */
-  public record SeatGradeInfo(
-      String gradeName,
-      Long price,
-      Integer totalSeats
-  ) {
+  public record SeatGradeInfo(String gradeName, Long price, Integer totalSeats) {
     public void validate() {
       if (gradeName == null || gradeName.isBlank()) {
         throw new IllegalArgumentException("SeatGradeInfo.gradeName은 필수입니다.");
@@ -369,11 +371,7 @@ public class ProductCreateCommand {
    * @param grade 등급명 (예: "VIP", "R", "S")
    * @param price 가격
    */
-  public record SeatCreateInfo(
-      String seatNumber,
-      String grade,
-      Long price
-  ) {
+  public record SeatCreateInfo(String seatNumber, String grade, Long price) {
     public void validate() {
       if (seatNumber == null || seatNumber.isBlank()) {
         throw new IllegalArgumentException("SeatCreateInfo.seatNumber는 필수입니다.");

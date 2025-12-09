@@ -22,13 +22,13 @@ public final class Venue {
   @Column(name = "stage_name", nullable = false)
   private String stageName;
 
-  @Column(name = "art_hall_id", nullable = false)
+  @Column(name = "arthall_id", nullable = false)
   private Long artHallId;
 
-  @Column(name = "art_hall_name", nullable = false)
+  @Column(name = "arthall_name", nullable = false)
   private String artHallName;
 
-  @Column(name = "art_hall_address", nullable = false)
+  @Column(name = "arthall_address", nullable = false)
   private String artHallAddress;
 
   public Venue(

@@ -106,46 +106,36 @@ public class Product extends AbstractAuditEntity {
   private Integer runningTime;
 
   /** 행사 일정 */
-  @Embedded
-  private Schedule schedule;
+  @Embedded private Schedule schedule;
 
   /** 예매 일정 */
-  @Embedded
-  private SaleSchedule saleSchedule;
+  @Embedded private SaleSchedule saleSchedule;
 
   /** 장소 정보 */
-  @Embedded
-  private Venue venue;
+  @Embedded private Venue venue;
 
   /** 좌석 현황 (총합) */
-  @Embedded
-  private SeatSummary seatSummary;
+  @Embedded private SeatSummary seatSummary;
 
   /** 통계 정보 */
-  @Embedded
-  private ProductStats stats;
+  @Embedded private ProductStats stats;
 
   // ========== 2차 확장: 콘텐츠/정책 ==========
 
   /** 행사 상세 정보 */
-  @Embedded
-  private ProductContent content;
+  @Embedded private ProductContent content;
 
   /** 관람 제한 */
-  @Embedded
-  private AgeRestriction ageRestriction;
+  @Embedded private AgeRestriction ageRestriction;
 
   /** 예매 정책 */
-  @Embedded
-  private BookingPolicy bookingPolicy;
+  @Embedded private BookingPolicy bookingPolicy;
 
   /** 입장 정책 */
-  @Embedded
-  private AdmissionPolicy admissionPolicy;
+  @Embedded private AdmissionPolicy admissionPolicy;
 
   /** 환불 정책 */
-  @Embedded
-  private RefundPolicy refundPolicy;
+  @Embedded private RefundPolicy refundPolicy;
 
   /** 등급별 좌석 정보 */
   @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -194,8 +184,8 @@ public class Product extends AbstractAuditEntity {
   /**
    * 상품을 생성한다.
    *
-   * <p>새 상품은 DRAFT 상태로 생성된다. 모든 콘텐츠와 정책은 서비스 레이어에서 조립하여 주입해야 한다.
-   * seatSummary는 SeatGrade 추가 시 자동 계산되며, stats는 0으로 초기화된다.
+   * <p>새 상품은 DRAFT 상태로 생성된다. 모든 콘텐츠와 정책은 서비스 레이어에서 조립하여 주입해야 한다. seatSummary는 SeatGrade 추가 시 자동
+   * 계산되며, stats는 0으로 초기화된다.
    *
    * @param sellerId 판매자 ID (필수)
    * @param name 상품명 (필수, 최대 50자)
@@ -243,9 +233,18 @@ public class Product extends AbstractAuditEntity {
     validateRefundPolicy(refundPolicy);
 
     return new Product(
-        sellerId, name, productType, runningTime,
-        schedule, saleSchedule, venue,
-        content, ageRestriction, bookingPolicy, admissionPolicy, refundPolicy);
+        sellerId,
+        name,
+        productType,
+        runningTime,
+        schedule,
+        saleSchedule,
+        venue,
+        content,
+        ageRestriction,
+        bookingPolicy,
+        admissionPolicy,
+        refundPolicy);
   }
 
   /**
@@ -307,7 +306,8 @@ public class Product extends AbstractAuditEntity {
    */
   public void updateAgeRestriction(AgeRestriction ageRestriction) {
     validateEditable();
-    this.ageRestriction = ageRestriction != null ? ageRestriction : AgeRestriction.defaultRestriction();
+    this.ageRestriction =
+        ageRestriction != null ? ageRestriction : AgeRestriction.defaultRestriction();
   }
 
   /**
@@ -333,7 +333,8 @@ public class Product extends AbstractAuditEntity {
    */
   public void updateAdmissionPolicy(AdmissionPolicy admissionPolicy) {
     validateEditable();
-    this.admissionPolicy = admissionPolicy != null ? admissionPolicy : AdmissionPolicy.defaultPolicy();
+    this.admissionPolicy =
+        admissionPolicy != null ? admissionPolicy : AdmissionPolicy.defaultPolicy();
   }
 
   /**
@@ -465,7 +466,8 @@ public class Product extends AbstractAuditEntity {
    * @return 생성된 SeatGrade
    * @throws ProductException 수정 불가능한 상태인 경우 ({@link ProductErrorCode#PRODUCT_NOT_EDITABLE})
    */
-  public SeatGrade addSeatGrade(String gradeName, Long price, Integer totalSeats, Integer displayOrder) {
+  public SeatGrade addSeatGrade(
+      String gradeName, Long price, Integer totalSeats, Integer displayOrder) {
     validateEditable();
     SeatGrade seatGrade = SeatGrade.create(this, gradeName, price, totalSeats, displayOrder);
     this.seatGrades.add(seatGrade);
@@ -528,22 +530,17 @@ public class Product extends AbstractAuditEntity {
     return Collections.unmodifiableList(seatGrades);
   }
 
-  /**
-   * SeatSummary를 SeatGrade 총합으로 재계산한다.
-   */
+  /** SeatSummary를 SeatGrade 총합으로 재계산한다. */
   private void recalculateSeatSummary() {
-    int totalSeats = seatGrades.stream()
-        .mapToInt(SeatGrade::getTotalSeats)
-        .sum();
-    int availableSeats = seatGrades.stream()
-        .mapToInt(SeatGrade::getAvailableSeats)
-        .sum();
+    int totalSeats = seatGrades.stream().mapToInt(SeatGrade::getTotalSeats).sum();
+    int availableSeats = seatGrades.stream().mapToInt(SeatGrade::getAvailableSeats).sum();
     this.seatSummary = new SeatSummary(totalSeats, availableSeats);
   }
 
   private SeatGrade findSeatGradeById(Long seatGradeId) {
     return seatGrades.stream()
-        .filter(sg -> sg.getId().equals(seatGradeId))
+        //        .filter(sg -> sg.getId().equals(seatGradeId))
+        .filter(sg -> Objects.equals(sg.getId(), seatGradeId))
         .findFirst()
         .orElseThrow(() -> new ProductException(ProductErrorCode.SEAT_GRADE_NOT_FOUND));
   }

@@ -1,10 +1,18 @@
 package com.tickatch.product_service.product.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
+import com.tickatch.product_service.product.domain.exception.ProductException;
 import com.tickatch.product_service.product.domain.repository.dto.ProductSearchCondition;
+import com.tickatch.product_service.product.domain.vo.AdmissionPolicy;
+import com.tickatch.product_service.product.domain.vo.AgeRestriction;
+import com.tickatch.product_service.product.domain.vo.BookingPolicy;
+import com.tickatch.product_service.product.domain.vo.ProductContent;
 import com.tickatch.product_service.product.domain.vo.ProductStatus;
 import com.tickatch.product_service.product.domain.vo.ProductType;
+import com.tickatch.product_service.product.domain.vo.RefundPolicy;
 import com.tickatch.product_service.product.domain.vo.SaleSchedule;
 import com.tickatch.product_service.product.domain.vo.Schedule;
 import com.tickatch.product_service.product.domain.vo.Venue;
@@ -291,6 +299,76 @@ class ProductRepositoryTest {
     }
   }
 
+  @Nested
+  @DisplayName("좌석 등급 제거 테스트 (JPA 환경)")
+  class 좌석_등급_제거_테스트 {
+
+    @Test
+    void DRAFT_상태에서_좌석_등급을_제거할_수_있다() {
+      // given
+      Product product = productRepository.save(createProduct(PRODUCT_NAME, PRODUCT_TYPE));
+      SeatGrade vip = product.addSeatGrade("VIP", 150000L, 100, 1);
+      product.addSeatGrade("R석", 120000L, 200, 2);
+      productRepository.flush(); // ID 부여
+
+      // when
+      product.removeSeatGrade(vip.getId());
+
+      // then
+      assertThat(product.getSeatGrades()).hasSize(1);
+      assertThat(product.getSeatGrades().get(0).getGradeName()).isEqualTo("R석");
+    }
+
+    @Test
+    void 좌석_등급_제거시_SeatSummary가_자동_재계산된다() {
+      // given
+      Product product = productRepository.save(createProduct(PRODUCT_NAME, PRODUCT_TYPE));
+      SeatGrade vip = product.addSeatGrade("VIP", 150000L, 100, 1);
+      product.addSeatGrade("R석", 120000L, 200, 2);
+      productRepository.flush();
+
+      // when
+      product.removeSeatGrade(vip.getId());
+
+      // then
+      assertThat(product.getSeatSummary().getTotalSeats()).isEqualTo(200);
+      assertThat(product.getSeatSummary().getAvailableSeats()).isEqualTo(200);
+    }
+
+    @Test
+    void 존재하지_않는_좌석_등급_제거시_예외가_발생한다() {
+      // given
+      Product product = productRepository.save(createProduct(PRODUCT_NAME, PRODUCT_TYPE));
+      product.addSeatGrade("VIP", 150000L, 100, 1);
+      productRepository.flush();
+
+      // when & then
+      assertThatThrownBy(() -> product.removeSeatGrade(999L))
+          .isInstanceOf(ProductException.class)
+          .extracting(e -> ((ProductException) e).getErrorCode())
+          .isEqualTo(ProductErrorCode.SEAT_GRADE_NOT_FOUND);
+    }
+
+    @Test
+    void 좌석_등급_제거_후_저장이_정상적으로_된다() {
+      // given
+      Product product = productRepository.save(createProduct(PRODUCT_NAME, PRODUCT_TYPE));
+      SeatGrade vip = product.addSeatGrade("VIP", 150000L, 100, 1);
+      product.addSeatGrade("R석", 120000L, 200, 2);
+      productRepository.flush();
+
+      // when
+      product.removeSeatGrade(vip.getId());
+      productRepository.flush();
+
+      // then - 재조회해서 확인
+      Product found = productRepository.findById(product.getId()).orElseThrow();
+      assertThat(found.getSeatGrades()).hasSize(1);
+      assertThat(found.getSeatGrades().get(0).getGradeName()).isEqualTo("R석");
+      assertThat(found.getSeatSummary().getTotalSeats()).isEqualTo(200);
+    }
+  }
+
   // ========== Helper Methods ==========
 
   private Product createProduct(String name, ProductType type) {
@@ -299,6 +377,17 @@ class ProductRepositoryTest {
 
   private Product createProduct(String name, ProductType type, String sellerId) {
     return Product.create(
-        sellerId, name, type, RUNNING_TIME, futureSchedule, futureSaleSchedule, defaultVenue);
+        sellerId,
+        name,
+        type,
+        RUNNING_TIME,
+        futureSchedule,
+        futureSaleSchedule,
+        defaultVenue,
+        ProductContent.empty(),
+        AgeRestriction.defaultRestriction(),
+        BookingPolicy.defaultPolicy(),
+        AdmissionPolicy.defaultPolicy(),
+        RefundPolicy.defaultPolicy());
   }
 }

@@ -62,15 +62,15 @@ public class ProductApi {
    */
   @Operation(summary = "상품 목록 조회", description = "검색 조건과 페이징을 적용하여 상품 목록을 조회한다.")
   @ApiResponses({
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "200",
-          description = "조회 성공")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "조회 성공")
   })
   @GetMapping
   public ApiResponse<PageResponse<ProductResponse>> getProducts(
       @ModelAttribute ProductSearchRequest request,
       @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
-      Pageable pageable) {
+          Pageable pageable) {
     var products = productQueryService.getProducts(request.toCondition(), pageable);
     return ApiResponse.success(PageResponse.from(products));
   }
@@ -83,12 +83,12 @@ public class ProductApi {
    */
   @Operation(summary = "상품 단건 조회", description = "상품 ID로 상품 상세 정보를 조회한다.")
   @ApiResponses({
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "200",
-          description = "조회 성공"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "404",
-          description = "상품을 찾을 수 없음")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "조회 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "상품을 찾을 수 없음")
   })
   @GetMapping("/{id}")
   public ApiResponse<ProductResponse> getProduct(
@@ -109,12 +109,12 @@ public class ProductApi {
    */
   @Operation(summary = "상품 생성", description = "새 상품을 DRAFT 상태로 생성한다.")
   @ApiResponses({
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "201",
-          description = "생성 성공"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "400",
-          description = "잘못된 요청")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "201",
+        description = "생성 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "400",
+        description = "잘못된 요청")
   })
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
@@ -135,24 +135,24 @@ public class ProductApi {
    */
   @Operation(
       summary = "상품 수정",
-      description = "상품 정보를 수정한다. DRAFT, REJECTED 상태에서만 가능하다. "
-          + "null이 아닌 필드만 수정되며, 세트 필드는 모두 함께 제공해야 한다.")
+      description =
+          "상품 정보를 수정한다. DRAFT, REJECTED 상태에서만 가능하다. " + "null이 아닌 필드만 수정되며, 세트 필드는 모두 함께 제공해야 한다.")
   @ApiResponses({
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "200",
-          description = "수정 성공"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "400",
-          description = "잘못된 요청"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "403",
-          description = "소유자가 아님"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "404",
-          description = "상품을 찾을 수 없음"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "422",
-          description = "수정 불가 상태")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "수정 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "400",
+        description = "잘못된 요청"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "403",
+        description = "소유자가 아님"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "상품을 찾을 수 없음"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "422",
+        description = "수정 불가 상태")
   })
   @PutMapping("/{id}")
   public ApiResponse<Void> updateProduct(
@@ -174,18 +174,18 @@ public class ProductApi {
    */
   @Operation(summary = "심사 제출", description = "DRAFT 상태의 상품을 심사에 제출한다. 상태가 PENDING으로 변경된다.")
   @ApiResponses({
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "200",
-          description = "제출 성공"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "403",
-          description = "소유자가 아님"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "404",
-          description = "상품을 찾을 수 없음"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "422",
-          description = "제출 불가 상태")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "제출 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "403",
+        description = "소유자가 아님"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "상품을 찾을 수 없음"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "422",
+        description = "제출 불가 상태")
   })
   @PostMapping("/{id}/submit")
   public ApiResponse<Void> submitForApproval(
@@ -203,15 +203,15 @@ public class ProductApi {
    */
   @Operation(summary = "상품 승인", description = "PENDING 상태의 상품을 승인한다. 상태가 APPROVED로 변경된다.")
   @ApiResponses({
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "200",
-          description = "승인 성공"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "404",
-          description = "상품을 찾을 수 없음"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "422",
-          description = "PENDING 상태가 아님")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "승인 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "상품을 찾을 수 없음"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "422",
+        description = "PENDING 상태가 아님")
   })
   @PostMapping("/{id}/approve")
   public ApiResponse<Void> approveProduct(
@@ -229,18 +229,18 @@ public class ProductApi {
    */
   @Operation(summary = "상품 반려", description = "PENDING 상태의 상품을 반려한다. 상태가 REJECTED로 변경된다.")
   @ApiResponses({
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "200",
-          description = "반려 성공"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "400",
-          description = "반려 사유 누락"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "404",
-          description = "상품을 찾을 수 없음"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "422",
-          description = "PENDING 상태가 아님")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "반려 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "400",
+        description = "반려 사유 누락"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "상품을 찾을 수 없음"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "422",
+        description = "PENDING 상태가 아님")
   })
   @PostMapping("/{id}/reject")
   public ApiResponse<Void> rejectProduct(
@@ -259,18 +259,18 @@ public class ProductApi {
    */
   @Operation(summary = "재제출", description = "REJECTED 상태의 상품을 수정 후 재제출한다. 상태가 DRAFT로 변경된다.")
   @ApiResponses({
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "200",
-          description = "재제출 성공"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "403",
-          description = "소유자가 아님"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "404",
-          description = "상품을 찾을 수 없음"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "422",
-          description = "REJECTED 상태가 아님")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "재제출 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "403",
+        description = "소유자가 아님"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "상품을 찾을 수 없음"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "422",
+        description = "REJECTED 상태가 아님")
   })
   @PostMapping("/{id}/resubmit")
   public ApiResponse<Void> resubmitProduct(
@@ -290,15 +290,15 @@ public class ProductApi {
    */
   @Operation(summary = "예매 예정", description = "APPROVED 상태의 상품을 SCHEDULED로 변경한다.")
   @ApiResponses({
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "200",
-          description = "변경 성공"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "404",
-          description = "상품을 찾을 수 없음"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "422",
-          description = "APPROVED 상태가 아님")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "변경 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "상품을 찾을 수 없음"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "422",
+        description = "APPROVED 상태가 아님")
   })
   @PostMapping("/{id}/schedule")
   public ApiResponse<Void> scheduleProduct(
@@ -315,15 +315,15 @@ public class ProductApi {
    */
   @Operation(summary = "판매 시작", description = "SCHEDULED 상태의 상품을 ON_SALE로 변경한다.")
   @ApiResponses({
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "200",
-          description = "변경 성공"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "404",
-          description = "상품을 찾을 수 없음"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "422",
-          description = "SCHEDULED 상태가 아님")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "변경 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "상품을 찾을 수 없음"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "422",
+        description = "SCHEDULED 상태가 아님")
   })
   @PostMapping("/{id}/start-sale")
   public ApiResponse<Void> startSale(
@@ -340,15 +340,15 @@ public class ProductApi {
    */
   @Operation(summary = "판매 종료", description = "ON_SALE 상태의 상품을 CLOSED로 변경한다.")
   @ApiResponses({
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "200",
-          description = "변경 성공"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "404",
-          description = "상품을 찾을 수 없음"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "422",
-          description = "ON_SALE 상태가 아님")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "변경 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "상품을 찾을 수 없음"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "422",
+        description = "ON_SALE 상태가 아님")
   })
   @PostMapping("/{id}/close-sale")
   public ApiResponse<Void> closeSale(
@@ -365,15 +365,15 @@ public class ProductApi {
    */
   @Operation(summary = "상품 완료", description = "CLOSED 상태의 상품을 COMPLETED로 변경한다.")
   @ApiResponses({
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "200",
-          description = "변경 성공"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "404",
-          description = "상품을 찾을 수 없음"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "422",
-          description = "CLOSED 상태가 아님")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "변경 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "상품을 찾을 수 없음"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "422",
+        description = "CLOSED 상태가 아님")
   })
   @PostMapping("/{id}/complete")
   public ApiResponse<Void> completeProduct(
@@ -391,15 +391,15 @@ public class ProductApi {
    */
   @Operation(summary = "상품 취소", description = "상품을 취소한다. 모든 상태에서 가능하며, 관련 서비스로 취소 이벤트가 발행된다.")
   @ApiResponses({
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "200",
-          description = "취소 성공"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "404",
-          description = "상품을 찾을 수 없음"),
-      @io.swagger.v3.oas.annotations.responses.ApiResponse(
-          responseCode = "422",
-          description = "이미 취소된 상품")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "200",
+        description = "취소 성공"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "404",
+        description = "상품을 찾을 수 없음"),
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(
+        responseCode = "422",
+        description = "이미 취소된 상품")
   })
   @DeleteMapping("/{id}")
   public ApiResponse<Void> cancelProduct(
