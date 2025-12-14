@@ -3,13 +3,19 @@ package com.tickatch.product_service.product.domain;
 import com.tickatch.product_service.global.domain.AbstractAuditEntity;
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
 import com.tickatch.product_service.product.domain.exception.ProductException;
+import com.tickatch.product_service.product.domain.vo.AdmissionPolicy;
+import com.tickatch.product_service.product.domain.vo.AgeRestriction;
+import com.tickatch.product_service.product.domain.vo.BookingPolicy;
+import com.tickatch.product_service.product.domain.vo.ProductContent;
 import com.tickatch.product_service.product.domain.vo.ProductStats;
 import com.tickatch.product_service.product.domain.vo.ProductStatus;
 import com.tickatch.product_service.product.domain.vo.ProductType;
+import com.tickatch.product_service.product.domain.vo.RefundPolicy;
 import com.tickatch.product_service.product.domain.vo.SaleSchedule;
 import com.tickatch.product_service.product.domain.vo.Schedule;
 import com.tickatch.product_service.product.domain.vo.SeatSummary;
 import com.tickatch.product_service.product.domain.vo.Venue;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
@@ -18,8 +24,12 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -54,6 +64,12 @@ import lombok.NoArgsConstructor;
  * @see Venue
  * @see SeatSummary
  * @see ProductStats
+ * @see ProductContent
+ * @see AgeRestriction
+ * @see BookingPolicy
+ * @see AdmissionPolicy
+ * @see RefundPolicy
+ * @see SeatGrade
  */
 @Entity
 @Table(name = "p_product")
@@ -98,11 +114,32 @@ public class Product extends AbstractAuditEntity {
   /** 장소 정보 */
   @Embedded private Venue venue;
 
-  /** 좌석 현황 */
+  /** 좌석 현황 (총합) */
   @Embedded private SeatSummary seatSummary;
 
   /** 통계 정보 */
   @Embedded private ProductStats stats;
+
+  // ========== 2차 확장: 콘텐츠/정책 ==========
+
+  /** 행사 상세 정보 */
+  @Embedded private ProductContent content;
+
+  /** 관람 제한 */
+  @Embedded private AgeRestriction ageRestriction;
+
+  /** 예매 정책 */
+  @Embedded private BookingPolicy bookingPolicy;
+
+  /** 입장 정책 */
+  @Embedded private AdmissionPolicy admissionPolicy;
+
+  /** 환불 정책 */
+  @Embedded private RefundPolicy refundPolicy;
+
+  /** 등급별 좌석 정보 */
+  @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<SeatGrade> seatGrades = new ArrayList<>();
 
   /** 반려 사유 */
   @Column(name = "rejection_reason", length = REJECTION_REASON_MAX_LENGTH)
@@ -120,7 +157,12 @@ public class Product extends AbstractAuditEntity {
       Integer runningTime,
       Schedule schedule,
       SaleSchedule saleSchedule,
-      Venue venue) {
+      Venue venue,
+      ProductContent content,
+      AgeRestriction ageRestriction,
+      BookingPolicy bookingPolicy,
+      AdmissionPolicy admissionPolicy,
+      RefundPolicy refundPolicy) {
     this.sellerId = sellerId;
     this.name = name;
     this.productType = productType;
@@ -128,6 +170,12 @@ public class Product extends AbstractAuditEntity {
     this.schedule = schedule;
     this.saleSchedule = saleSchedule;
     this.venue = venue;
+    this.content = content;
+    this.ageRestriction = ageRestriction;
+    this.bookingPolicy = bookingPolicy;
+    this.admissionPolicy = admissionPolicy;
+    this.refundPolicy = refundPolicy;
+    // 도메인 내부 계산/초기화
     this.seatSummary = SeatSummary.empty();
     this.stats = ProductStats.empty();
     this.status = ProductStatus.DRAFT;
@@ -136,7 +184,8 @@ public class Product extends AbstractAuditEntity {
   /**
    * 상품을 생성한다.
    *
-   * <p>새 상품은 DRAFT 상태로 생성된다.
+   * <p>새 상품은 DRAFT 상태로 생성된다. 모든 콘텐츠와 정책은 서비스 레이어에서 조립하여 주입해야 한다. seatSummary는 SeatGrade 추가 시 자동
+   * 계산되며, stats는 0으로 초기화된다.
    *
    * @param sellerId 판매자 ID (필수)
    * @param name 상품명 (필수, 최대 50자)
@@ -145,6 +194,11 @@ public class Product extends AbstractAuditEntity {
    * @param schedule 행사 일정 (필수)
    * @param saleSchedule 예매 일정 (필수)
    * @param venue 장소 정보 (필수)
+   * @param content 상품 콘텐츠 (필수)
+   * @param ageRestriction 관람 제한 (필수)
+   * @param bookingPolicy 예매 정책 (필수)
+   * @param admissionPolicy 입장 정책 (필수)
+   * @param refundPolicy 환불 정책 (필수)
    * @return 생성된 상품 엔티티
    * @throws ProductException 유효성 검증 실패 시
    */
@@ -155,7 +209,13 @@ public class Product extends AbstractAuditEntity {
       Integer runningTime,
       Schedule schedule,
       SaleSchedule saleSchedule,
-      Venue venue) {
+      Venue venue,
+      ProductContent content,
+      AgeRestriction ageRestriction,
+      BookingPolicy bookingPolicy,
+      AdmissionPolicy admissionPolicy,
+      RefundPolicy refundPolicy) {
+    // 기본 정보 검증
     validateSellerId(sellerId);
     validateName(name);
     validateProductType(productType);
@@ -165,7 +225,26 @@ public class Product extends AbstractAuditEntity {
     validateVenue(venue);
     validateScheduleConsistency(schedule, saleSchedule);
 
-    return new Product(sellerId, name, productType, runningTime, schedule, saleSchedule, venue);
+    // 콘텐츠/정책 null 검증
+    validateContent(content);
+    validateAgeRestriction(ageRestriction);
+    validateBookingPolicy(bookingPolicy);
+    validateAdmissionPolicy(admissionPolicy);
+    validateRefundPolicy(refundPolicy);
+
+    return new Product(
+        sellerId,
+        name,
+        productType,
+        runningTime,
+        schedule,
+        saleSchedule,
+        venue,
+        content,
+        ageRestriction,
+        bookingPolicy,
+        admissionPolicy,
+        refundPolicy);
   }
 
   /**
@@ -200,6 +279,75 @@ public class Product extends AbstractAuditEntity {
     this.runningTime = runningTime;
     this.schedule = schedule;
     this.saleSchedule = saleSchedule;
+  }
+
+  // ========== 콘텐츠/정책 수정 메서드 ==========
+
+  /**
+   * 상품 콘텐츠를 수정한다.
+   *
+   * <p>수정 가능한 상태(DRAFT, REJECTED)에서만 수정 가능하다.
+   *
+   * @param content 상품 콘텐츠
+   * @throws ProductException 수정 불가능한 상태인 경우 ({@link ProductErrorCode#PRODUCT_NOT_EDITABLE})
+   */
+  public void updateContent(ProductContent content) {
+    validateEditable();
+    this.content = content != null ? content : ProductContent.empty();
+  }
+
+  /**
+   * 관람 제한을 수정한다.
+   *
+   * <p>수정 가능한 상태(DRAFT, REJECTED)에서만 수정 가능하다.
+   *
+   * @param ageRestriction 관람 제한
+   * @throws ProductException 수정 불가능한 상태인 경우 ({@link ProductErrorCode#PRODUCT_NOT_EDITABLE})
+   */
+  public void updateAgeRestriction(AgeRestriction ageRestriction) {
+    validateEditable();
+    this.ageRestriction =
+        ageRestriction != null ? ageRestriction : AgeRestriction.defaultRestriction();
+  }
+
+  /**
+   * 예매 정책을 수정한다.
+   *
+   * <p>수정 가능한 상태(DRAFT, REJECTED)에서만 수정 가능하다.
+   *
+   * @param bookingPolicy 예매 정책
+   * @throws ProductException 수정 불가능한 상태인 경우 ({@link ProductErrorCode#PRODUCT_NOT_EDITABLE})
+   */
+  public void updateBookingPolicy(BookingPolicy bookingPolicy) {
+    validateEditable();
+    this.bookingPolicy = bookingPolicy != null ? bookingPolicy : BookingPolicy.defaultPolicy();
+  }
+
+  /**
+   * 입장 정책을 수정한다.
+   *
+   * <p>수정 가능한 상태(DRAFT, REJECTED)에서만 수정 가능하다.
+   *
+   * @param admissionPolicy 입장 정책
+   * @throws ProductException 수정 불가능한 상태인 경우 ({@link ProductErrorCode#PRODUCT_NOT_EDITABLE})
+   */
+  public void updateAdmissionPolicy(AdmissionPolicy admissionPolicy) {
+    validateEditable();
+    this.admissionPolicy =
+        admissionPolicy != null ? admissionPolicy : AdmissionPolicy.defaultPolicy();
+  }
+
+  /**
+   * 환불 정책을 수정한다.
+   *
+   * <p>수정 가능한 상태(DRAFT, REJECTED)에서만 수정 가능하다.
+   *
+   * @param refundPolicy 환불 정책
+   * @throws ProductException 수정 불가능한 상태인 경우 ({@link ProductErrorCode#PRODUCT_NOT_EDITABLE})
+   */
+  public void updateRefundPolicy(RefundPolicy refundPolicy) {
+    validateEditable();
+    this.refundPolicy = refundPolicy != null ? refundPolicy : RefundPolicy.defaultPolicy();
   }
 
   // ========== 심사 관련 메서드 ==========
@@ -304,6 +452,106 @@ public class Product extends AbstractAuditEntity {
     this.seatSummary = this.seatSummary.increaseAvailable(count);
   }
 
+  // ========== SeatGrade 관련 메서드 ==========
+
+  /**
+   * 좌석 등급을 추가한다.
+   *
+   * <p>수정 가능한 상태(DRAFT, REJECTED)에서만 추가 가능하다.
+   *
+   * @param gradeName 등급명
+   * @param price 가격
+   * @param totalSeats 총 좌석수
+   * @param displayOrder 표시 순서
+   * @return 생성된 SeatGrade
+   * @throws ProductException 수정 불가능한 상태인 경우 ({@link ProductErrorCode#PRODUCT_NOT_EDITABLE})
+   */
+  public SeatGrade addSeatGrade(
+      String gradeName, Long price, Integer totalSeats, Integer displayOrder) {
+    validateEditable();
+    SeatGrade seatGrade = SeatGrade.create(this, gradeName, price, totalSeats, displayOrder);
+    this.seatGrades.add(seatGrade);
+    recalculateSeatSummary();
+    return seatGrade;
+  }
+
+  /**
+   * 좌석 등급을 제거한다.
+   *
+   * <p>수정 가능한 상태(DRAFT, REJECTED)에서만 제거 가능하다.
+   *
+   * @param seatGradeId 제거할 SeatGrade ID
+   * @throws ProductException 수정 불가능한 상태인 경우 ({@link ProductErrorCode#PRODUCT_NOT_EDITABLE})
+   * @throws ProductException 해당 등급이 없는 경우 ({@link ProductErrorCode#SEAT_GRADE_NOT_FOUND})
+   */
+  public void removeSeatGrade(Long seatGradeId) {
+    validateEditable();
+    SeatGrade target = findSeatGradeById(seatGradeId);
+    this.seatGrades.remove(target);
+    recalculateSeatSummary();
+  }
+
+  /**
+   * 등급별 잔여 좌석을 차감한다.
+   *
+   * <p>예매 시 호출된다. SeatSummary도 함께 갱신된다.
+   *
+   * @param gradeName 등급명
+   * @param count 차감할 좌석 수
+   * @throws ProductException 해당 등급이 없는 경우 ({@link ProductErrorCode#SEAT_GRADE_NOT_FOUND})
+   */
+  public void decreaseSeatGradeAvailable(String gradeName, int count) {
+    SeatGrade seatGrade = findSeatGradeByName(gradeName);
+    seatGrade.decreaseAvailableSeats(count);
+    this.seatSummary = this.seatSummary.decreaseAvailable(count);
+  }
+
+  /**
+   * 등급별 잔여 좌석을 복구한다.
+   *
+   * <p>예매 취소 시 호출된다. SeatSummary도 함께 갱신된다.
+   *
+   * @param gradeName 등급명
+   * @param count 복구할 좌석 수
+   * @throws ProductException 해당 등급이 없는 경우 ({@link ProductErrorCode#SEAT_GRADE_NOT_FOUND})
+   */
+  public void increaseSeatGradeAvailable(String gradeName, int count) {
+    SeatGrade seatGrade = findSeatGradeByName(gradeName);
+    seatGrade.increaseAvailableSeats(count);
+    this.seatSummary = this.seatSummary.increaseAvailable(count);
+  }
+
+  /**
+   * 등급별 좌석 정보를 읽기 전용 리스트로 반환한다.
+   *
+   * @return 읽기 전용 SeatGrade 리스트
+   */
+  public List<SeatGrade> getSeatGrades() {
+    return Collections.unmodifiableList(seatGrades);
+  }
+
+  /** SeatSummary를 SeatGrade 총합으로 재계산한다. */
+  private void recalculateSeatSummary() {
+    int totalSeats = seatGrades.stream().mapToInt(SeatGrade::getTotalSeats).sum();
+    int availableSeats = seatGrades.stream().mapToInt(SeatGrade::getAvailableSeats).sum();
+    this.seatSummary = new SeatSummary(totalSeats, availableSeats);
+  }
+
+  private SeatGrade findSeatGradeById(Long seatGradeId) {
+    return seatGrades.stream()
+        //        .filter(sg -> sg.getId().equals(seatGradeId))
+        .filter(sg -> Objects.equals(sg.getId(), seatGradeId))
+        .findFirst()
+        .orElseThrow(() -> new ProductException(ProductErrorCode.SEAT_GRADE_NOT_FOUND));
+  }
+
+  private SeatGrade findSeatGradeByName(String gradeName) {
+    return seatGrades.stream()
+        .filter(sg -> sg.getGradeName().equals(gradeName))
+        .findFirst()
+        .orElseThrow(() -> new ProductException(ProductErrorCode.SEAT_GRADE_NOT_FOUND));
+  }
+
   // ========== 통계 관련 메서드 ==========
 
   /** 조회수를 증가한다. */
@@ -404,6 +652,17 @@ public class Product extends AbstractAuditEntity {
    */
   public boolean isSoldOut() {
     return this.seatSummary.isSoldOut();
+  }
+
+  /**
+   * 심사 제출 가능 여부를 확인한다.
+   *
+   * <p>필수 콘텐츠(description, posterImageUrl)가 입력되어 있어야 한다.
+   *
+   * @return 심사 제출 가능하면 true
+   */
+  public boolean canSubmitForApproval() {
+    return this.status.isDraft() && this.content.hasRequiredFields();
   }
 
   /**
@@ -640,6 +899,36 @@ public class Product extends AbstractAuditEntity {
     // 예매 종료일은 행사 시작일보다 이전이어야 함
     if (!saleSchedule.getSaleEndAt().isBefore(schedule.getStartAt())) {
       throw new ProductException(ProductErrorCode.SALE_MUST_END_BEFORE_EVENT);
+    }
+  }
+
+  private static void validateContent(ProductContent content) {
+    if (Objects.isNull(content)) {
+      throw new ProductException(ProductErrorCode.INVALID_PRODUCT_CONTENT);
+    }
+  }
+
+  private static void validateAgeRestriction(AgeRestriction ageRestriction) {
+    if (Objects.isNull(ageRestriction)) {
+      throw new ProductException(ProductErrorCode.INVALID_AGE_RESTRICTION);
+    }
+  }
+
+  private static void validateBookingPolicy(BookingPolicy bookingPolicy) {
+    if (Objects.isNull(bookingPolicy)) {
+      throw new ProductException(ProductErrorCode.INVALID_BOOKING_POLICY);
+    }
+  }
+
+  private static void validateAdmissionPolicy(AdmissionPolicy admissionPolicy) {
+    if (Objects.isNull(admissionPolicy)) {
+      throw new ProductException(ProductErrorCode.INVALID_ADMISSION_POLICY);
+    }
+  }
+
+  private static void validateRefundPolicy(RefundPolicy refundPolicy) {
+    if (Objects.isNull(refundPolicy)) {
+      throw new ProductException(ProductErrorCode.INVALID_REFUND_POLICY);
     }
   }
 

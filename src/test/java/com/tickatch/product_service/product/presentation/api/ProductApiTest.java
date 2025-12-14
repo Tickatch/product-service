@@ -8,19 +8,22 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tickatch.product_service.product.application.dto.ProductCreateCommand;
+import com.tickatch.product_service.product.application.dto.ProductUpdateCommand;
 import com.tickatch.product_service.product.application.service.ProductCommandService;
 import com.tickatch.product_service.product.application.service.ProductQueryService;
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
 import com.tickatch.product_service.product.domain.exception.ProductException;
 import com.tickatch.product_service.product.domain.repository.dto.ProductResponse;
 import com.tickatch.product_service.product.domain.repository.dto.ProductSearchCondition;
+import com.tickatch.product_service.product.domain.vo.AgeRating;
 import com.tickatch.product_service.product.domain.vo.ProductStatus;
 import com.tickatch.product_service.product.domain.vo.ProductType;
 import com.tickatch.product_service.product.presentation.api.dto.ProductCreateRequest;
+import com.tickatch.product_service.product.presentation.api.dto.ProductCreateRequest.SeatCreateRequest;
+import com.tickatch.product_service.product.presentation.api.dto.ProductCreateRequest.SeatGradeRequest;
 import com.tickatch.product_service.product.presentation.api.dto.ProductUpdateRequest;
 import com.tickatch.product_service.product.presentation.api.dto.RejectRequest;
-import com.tickatch.product_service.product.presentation.api.dto.StatusChangeRequest;
-import com.tickatch.product_service.product.presentation.api.dto.VenueChangeRequest;
 import io.github.tickatch.common.security.test.MockUser;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -137,11 +140,7 @@ class ProductApiTest {
     @MockUser(userId = SELLER_ID)
     void 상품을_생성할_수_있다() {
       ProductCreateRequest request = createValidCreateRequest();
-      given(
-              productCommandService.createProduct(
-                  any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
-                  any(), any()))
-          .willReturn(1L);
+      given(productCommandService.createProduct(any(ProductCreateCommand.class))).willReturn(1L);
 
       assertThat(
               mockMvc
@@ -158,20 +157,7 @@ class ProductApiTest {
     @Test
     @MockUser(userId = SELLER_ID)
     void 상품명이_없으면_400을_반환한다() {
-      ProductCreateRequest request =
-          new ProductCreateRequest(
-              "",
-              PRODUCT_TYPE,
-              RUNNING_TIME,
-              LocalDateTime.now().plusDays(30),
-              LocalDateTime.now().plusDays(31),
-              LocalDateTime.now().plusDays(1),
-              LocalDateTime.now().plusDays(29),
-              STAGE_ID,
-              STAGE_NAME,
-              ART_HALL_ID,
-              ART_HALL_NAME,
-              ART_HALL_ADDRESS);
+      ProductCreateRequest request = createRequestWithoutName();
 
       assertThat(
               mockMvc
@@ -185,20 +171,21 @@ class ProductApiTest {
     @Test
     @MockUser(userId = SELLER_ID)
     void 예매_일정이_없으면_400을_반환한다() {
-      ProductCreateRequest request =
-          new ProductCreateRequest(
-              PRODUCT_NAME,
-              PRODUCT_TYPE,
-              RUNNING_TIME,
-              LocalDateTime.now().plusDays(30),
-              LocalDateTime.now().plusDays(31),
-              null, // saleStartAt 누락
-              null, // saleEndAt 누락
-              STAGE_ID,
-              STAGE_NAME,
-              ART_HALL_ID,
-              ART_HALL_NAME,
-              ART_HALL_ADDRESS);
+      ProductCreateRequest request = createRequestWithoutSaleSchedule();
+
+      assertThat(
+              mockMvc
+                  .post()
+                  .uri(BASE_URL)
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(toJson(request)))
+          .hasStatus(400);
+    }
+
+    @Test
+    @MockUser(userId = SELLER_ID)
+    void 좌석_정보가_없으면_400을_반환한다() {
+      ProductCreateRequest request = createRequestWithoutSeats();
 
       assertThat(
               mockMvc
@@ -231,9 +218,7 @@ class ProductApiTest {
     @MockUser(userId = SELLER_ID)
     void 상품을_수정할_수_있다() {
       ProductUpdateRequest request = createValidUpdateRequest();
-      doNothing()
-          .when(productCommandService)
-          .updateProduct(any(), any(), any(), any(), any(), any(), any(), any(), any());
+      doNothing().when(productCommandService).updateProduct(any(ProductUpdateCommand.class));
 
       assertThat(
               mockMvc
@@ -253,7 +238,7 @@ class ProductApiTest {
       ProductUpdateRequest request = createValidUpdateRequest();
       doThrow(new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND, 999L))
           .when(productCommandService)
-          .updateProduct(eq(999L), any(), any(), any(), any(), any(), any(), any(), any());
+          .updateProduct(any(ProductUpdateCommand.class));
 
       assertThat(
               mockMvc
@@ -270,8 +255,7 @@ class ProductApiTest {
       ProductUpdateRequest request = createValidUpdateRequest();
       doThrow(new ProductException(ProductErrorCode.PRODUCT_NOT_OWNED))
           .when(productCommandService)
-          .updateProduct(
-              eq(1L), eq("other-seller"), any(), any(), any(), any(), any(), any(), any());
+          .updateProduct(any(ProductUpdateCommand.class));
 
       assertThat(
               mockMvc
@@ -281,64 +265,22 @@ class ProductApiTest {
                   .content(toJson(request)))
           .hasStatus(403);
     }
-  }
-
-  @Nested
-  @DisplayName("PATCH /api/v1/products/{id}/venue")
-  class 장소_변경_API_테스트 {
 
     @Test
     @MockUser(userId = SELLER_ID)
-    void 장소를_변경할_수_있다() {
-      VenueChangeRequest request = new VenueChangeRequest(2L, "대공연장", 200L, "세종문화회관", "서울시 종로구");
-      doNothing()
+    void 수정_불가_상태면_422를_반환한다() {
+      ProductUpdateRequest request = createValidUpdateRequest();
+      doThrow(new ProductException(ProductErrorCode.PRODUCT_NOT_EDITABLE))
           .when(productCommandService)
-          .changeVenue(any(), any(), any(), any(), any(), any(), any());
+          .updateProduct(any(ProductUpdateCommand.class));
 
       assertThat(
               mockMvc
-                  .patch()
-                  .uri(BASE_URL + "/{id}/venue", 1L)
-                  .contentType(MediaType.APPLICATION_JSON)
-                  .content(toJson(request)))
-          .hasStatusOk()
-          .bodyJson()
-          .extractingPath("$.success")
-          .isEqualTo(true);
-    }
-
-    @Test
-    @MockUser(userId = SELLER_ID)
-    void 행사_시작_후_장소_변경_시_422를_반환한다() {
-      VenueChangeRequest request = new VenueChangeRequest(2L, "대공연장", 200L, "세종문화회관", "서울시 종로구");
-      doThrow(new ProductException(ProductErrorCode.VENUE_CHANGE_NOT_ALLOWED))
-          .when(productCommandService)
-          .changeVenue(eq(1L), any(), any(), any(), any(), any(), any());
-
-      assertThat(
-              mockMvc
-                  .patch()
-                  .uri(BASE_URL + "/{id}/venue", 1L)
+                  .put()
+                  .uri(BASE_URL + "/{id}", 1L)
                   .contentType(MediaType.APPLICATION_JSON)
                   .content(toJson(request)))
           .hasStatus(422);
-    }
-
-    @Test
-    @MockUser(userId = "other-seller")
-    void 소유자가_아니면_403을_반환한다() {
-      VenueChangeRequest request = new VenueChangeRequest(2L, "대공연장", 200L, "세종문화회관", "서울시 종로구");
-      doThrow(new ProductException(ProductErrorCode.PRODUCT_NOT_OWNED))
-          .when(productCommandService)
-          .changeVenue(eq(1L), eq("other-seller"), any(), any(), any(), any(), any());
-
-      assertThat(
-              mockMvc
-                  .patch()
-                  .uri(BASE_URL + "/{id}/venue", 1L)
-                  .contentType(MediaType.APPLICATION_JSON)
-                  .content(toJson(request)))
-          .hasStatus(403);
     }
   }
 
@@ -510,21 +452,15 @@ class ProductApiTest {
   }
 
   @Nested
-  @DisplayName("PATCH /api/v1/products/{id}/status")
-  class 상품_상태_변경_API_테스트 {
+  @DisplayName("POST /api/v1/products/{id}/schedule")
+  class 예매_예정_API_테스트 {
 
     @Test
     @MockUser(userId = "admin")
-    void 상태를_변경할_수_있다() {
-      StatusChangeRequest request = new StatusChangeRequest(ProductStatus.SCHEDULED);
-      doNothing().when(productCommandService).changeStatus(any(), any());
+    void 예매_예정_상태로_변경할_수_있다() {
+      doNothing().when(productCommandService).scheduleProduct(any());
 
-      assertThat(
-              mockMvc
-                  .patch()
-                  .uri(BASE_URL + "/{id}/status", 1L)
-                  .contentType(MediaType.APPLICATION_JSON)
-                  .content(toJson(request)))
+      assertThat(mockMvc.post().uri(BASE_URL + "/{id}/schedule", 1L))
           .hasStatusOk()
           .bodyJson()
           .extractingPath("$.success")
@@ -533,21 +469,111 @@ class ProductApiTest {
 
     @Test
     @MockUser(userId = "admin")
-    void 허용되지_않는_상태_변경_시_422를_반환한다() {
-      StatusChangeRequest request = new StatusChangeRequest(ProductStatus.ON_SALE);
+    void APPROVED_상태가_아니면_422를_반환한다() {
+      doThrow(
+              new ProductException(
+                  ProductErrorCode.PRODUCT_STATUS_CHANGE_NOT_ALLOWED, "DRAFT", "SCHEDULED"))
+          .when(productCommandService)
+          .scheduleProduct(eq(1L));
+
+      assertThat(mockMvc.post().uri(BASE_URL + "/{id}/schedule", 1L)).hasStatus(422);
+    }
+
+    @Test
+    @MockUser(userId = "admin")
+    void 존재하지_않는_상품_변경_시_404를_반환한다() {
+      doThrow(new ProductException(ProductErrorCode.PRODUCT_NOT_FOUND, 999L))
+          .when(productCommandService)
+          .scheduleProduct(eq(999L));
+
+      assertThat(mockMvc.post().uri(BASE_URL + "/{id}/schedule", 999L)).hasStatus(404);
+    }
+  }
+
+  @Nested
+  @DisplayName("POST /api/v1/products/{id}/start-sale")
+  class 판매_시작_API_테스트 {
+
+    @Test
+    @MockUser(userId = "admin")
+    void 판매를_시작할_수_있다() {
+      doNothing().when(productCommandService).startSale(any());
+
+      assertThat(mockMvc.post().uri(BASE_URL + "/{id}/start-sale", 1L))
+          .hasStatusOk()
+          .bodyJson()
+          .extractingPath("$.success")
+          .isEqualTo(true);
+    }
+
+    @Test
+    @MockUser(userId = "admin")
+    void SCHEDULED_상태가_아니면_422를_반환한다() {
       doThrow(
               new ProductException(
                   ProductErrorCode.PRODUCT_STATUS_CHANGE_NOT_ALLOWED, "DRAFT", "ON_SALE"))
           .when(productCommandService)
-          .changeStatus(eq(1L), eq(ProductStatus.ON_SALE));
+          .startSale(eq(1L));
 
-      assertThat(
-              mockMvc
-                  .patch()
-                  .uri(BASE_URL + "/{id}/status", 1L)
-                  .contentType(MediaType.APPLICATION_JSON)
-                  .content(toJson(request)))
-          .hasStatus(422);
+      assertThat(mockMvc.post().uri(BASE_URL + "/{id}/start-sale", 1L)).hasStatus(422);
+    }
+  }
+
+  @Nested
+  @DisplayName("POST /api/v1/products/{id}/close-sale")
+  class 판매_종료_API_테스트 {
+
+    @Test
+    @MockUser(userId = "admin")
+    void 판매를_종료할_수_있다() {
+      doNothing().when(productCommandService).closeSale(any());
+
+      assertThat(mockMvc.post().uri(BASE_URL + "/{id}/close-sale", 1L))
+          .hasStatusOk()
+          .bodyJson()
+          .extractingPath("$.success")
+          .isEqualTo(true);
+    }
+
+    @Test
+    @MockUser(userId = "admin")
+    void ON_SALE_상태가_아니면_422를_반환한다() {
+      doThrow(
+              new ProductException(
+                  ProductErrorCode.PRODUCT_STATUS_CHANGE_NOT_ALLOWED, "DRAFT", "CLOSED"))
+          .when(productCommandService)
+          .closeSale(eq(1L));
+
+      assertThat(mockMvc.post().uri(BASE_URL + "/{id}/close-sale", 1L)).hasStatus(422);
+    }
+  }
+
+  @Nested
+  @DisplayName("POST /api/v1/products/{id}/complete")
+  class 상품_완료_API_테스트 {
+
+    @Test
+    @MockUser(userId = "admin")
+    void 상품을_완료할_수_있다() {
+      doNothing().when(productCommandService).completeProduct(any());
+
+      assertThat(mockMvc.post().uri(BASE_URL + "/{id}/complete", 1L))
+          .hasStatusOk()
+          .bodyJson()
+          .extractingPath("$.success")
+          .isEqualTo(true);
+    }
+
+    @Test
+    @MockUser(userId = "admin")
+    void CLOSED_상태가_아니면_422를_반환한다() {
+      doThrow(
+              new ProductException(
+                  ProductErrorCode.PRODUCT_STATUS_CHANGE_NOT_ALLOWED, "DRAFT", "COMPLETED"))
+          .when(productCommandService)
+          .completeProduct(eq(1L));
+
+      assertThat(mockMvc.post().uri(BASE_URL + "/{id}/complete", 1L)).hasStatus(422);
     }
   }
 
@@ -603,7 +629,161 @@ class ProductApiTest {
         STAGE_NAME,
         ART_HALL_ID,
         ART_HALL_NAME,
-        ART_HALL_ADDRESS);
+        ART_HALL_ADDRESS,
+        // 콘텐츠 (선택)
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        // 관람 제한
+        AgeRating.ALL,
+        null,
+        // 예매 정책
+        4,
+        false,
+        true,
+        // 입장 정책
+        30,
+        true,
+        null,
+        true,
+        15,
+        false,
+        false,
+        // 환불 정책
+        true,
+        7,
+        null,
+        // 좌석 정보
+        List.of(new SeatGradeRequest("VIP", 150000L, 10), new SeatGradeRequest("R", 120000L, 20)),
+        List.of(
+            new SeatCreateRequest("A1", "VIP", 150000L),
+            new SeatCreateRequest("A2", "VIP", 150000L),
+            new SeatCreateRequest("B1", "R", 120000L),
+            new SeatCreateRequest("B2", "R", 120000L)));
+  }
+
+  private ProductCreateRequest createRequestWithoutName() {
+    return new ProductCreateRequest(
+        "", // 빈 이름
+        PRODUCT_TYPE,
+        RUNNING_TIME,
+        LocalDateTime.now().plusDays(30),
+        LocalDateTime.now().plusDays(31),
+        LocalDateTime.now().plusDays(1),
+        LocalDateTime.now().plusDays(29),
+        STAGE_ID,
+        STAGE_NAME,
+        ART_HALL_ID,
+        ART_HALL_NAME,
+        ART_HALL_ADDRESS,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        AgeRating.ALL,
+        null,
+        4,
+        false,
+        true,
+        30,
+        true,
+        null,
+        true,
+        15,
+        false,
+        false,
+        true,
+        7,
+        null,
+        List.of(new SeatGradeRequest("VIP", 150000L, 10)),
+        List.of(new SeatCreateRequest("A1", "VIP", 150000L)));
+  }
+
+  private ProductCreateRequest createRequestWithoutSaleSchedule() {
+    return new ProductCreateRequest(
+        PRODUCT_NAME,
+        PRODUCT_TYPE,
+        RUNNING_TIME,
+        LocalDateTime.now().plusDays(30),
+        LocalDateTime.now().plusDays(31),
+        null, // saleStartAt 누락
+        null, // saleEndAt 누락
+        STAGE_ID,
+        STAGE_NAME,
+        ART_HALL_ID,
+        ART_HALL_NAME,
+        ART_HALL_ADDRESS,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        AgeRating.ALL,
+        null,
+        4,
+        false,
+        true,
+        30,
+        true,
+        null,
+        true,
+        15,
+        false,
+        false,
+        true,
+        7,
+        null,
+        List.of(new SeatGradeRequest("VIP", 150000L, 10)),
+        List.of(new SeatCreateRequest("A1", "VIP", 150000L)));
+  }
+
+  private ProductCreateRequest createRequestWithoutSeats() {
+    return new ProductCreateRequest(
+        PRODUCT_NAME,
+        PRODUCT_TYPE,
+        RUNNING_TIME,
+        LocalDateTime.now().plusDays(30),
+        LocalDateTime.now().plusDays(31),
+        LocalDateTime.now().plusDays(1),
+        LocalDateTime.now().plusDays(29),
+        STAGE_ID,
+        STAGE_NAME,
+        ART_HALL_ID,
+        ART_HALL_NAME,
+        ART_HALL_ADDRESS,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        AgeRating.ALL,
+        null,
+        4,
+        false,
+        true,
+        30,
+        true,
+        null,
+        true,
+        15,
+        false,
+        false,
+        true,
+        7,
+        null,
+        List.of(), // 빈 좌석 등급
+        List.of()); // 빈 좌석 정보
   }
 
   private ProductUpdateRequest createValidUpdateRequest() {
@@ -614,7 +794,43 @@ class ProductApiTest {
         LocalDateTime.now().plusDays(30),
         LocalDateTime.now().plusDays(31),
         LocalDateTime.now().plusDays(1),
-        LocalDateTime.now().plusDays(29));
+        LocalDateTime.now().plusDays(29),
+        // 장소 (선택)
+        null,
+        null,
+        null,
+        null,
+        null,
+        // 콘텐츠 (선택)
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        // 관람 제한 (선택)
+        null,
+        null,
+        // 예매 정책 (선택)
+        null,
+        null,
+        null,
+        // 입장 정책 (선택)
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        // 환불 정책 (선택)
+        null,
+        null,
+        null,
+        // 좌석 (선택)
+        null,
+        null);
   }
 
   private ProductResponse createProductResponse(Long id, String name) {
@@ -633,12 +849,17 @@ class ProductApiTest {
         .artHallId(ART_HALL_ID)
         .artHallName(ART_HALL_NAME)
         .artHallAddress(ART_HALL_ADDRESS)
+        .ageRating(AgeRating.ALL)
+        .maxTicketsPerPerson(4)
+        .admissionMinutesBefore(30)
+        .cancellable(true)
         .status(ProductStatus.DRAFT)
-        .totalSeats(0)
-        .availableSeats(0)
+        .totalSeats(30)
+        .availableSeats(30)
         .viewCount(0L)
         .reservationCount(0)
         .purchasable(false)
+        .seatGrades(List.of())
         .createdAt(LocalDateTime.now())
         .updatedAt(LocalDateTime.now())
         .build();

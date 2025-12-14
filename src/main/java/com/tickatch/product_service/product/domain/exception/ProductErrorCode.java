@@ -5,7 +5,12 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
-/** Product 전용 에러코드 */
+/**
+ * Product 전용 에러코드.
+ *
+ * @author Tickatch
+ * @since 1.0.0
+ */
 @Getter
 @RequiredArgsConstructor
 public enum ProductErrorCode implements ErrorCode {
@@ -13,7 +18,7 @@ public enum ProductErrorCode implements ErrorCode {
   // 조회
   PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "PRODUCT_NOT_FOUND"),
 
-  // 검증
+  // 검증 - 기본 정보
   INVALID_PRODUCT_NAME(HttpStatus.BAD_REQUEST.value(), "INVALID_PRODUCT_NAME"),
   INVALID_RUNNING_TIME(HttpStatus.BAD_REQUEST.value(), "INVALID_RUNNING_TIME"),
   INVALID_PRODUCT_TYPE(HttpStatus.BAD_REQUEST.value(), "INVALID_PRODUCT_TYPE"),
@@ -24,6 +29,18 @@ public enum ProductErrorCode implements ErrorCode {
   INVALID_VENUE(HttpStatus.BAD_REQUEST.value(), "INVALID_VENUE"),
   INVALID_SELLER_ID(HttpStatus.BAD_REQUEST.value(), "INVALID_SELLER_ID"),
   INVALID_REJECTION_REASON(HttpStatus.BAD_REQUEST.value(), "INVALID_REJECTION_REASON"),
+
+  // 검증 - 콘텐츠/정책
+  INVALID_PRODUCT_CONTENT(HttpStatus.BAD_REQUEST.value(), "INVALID_PRODUCT_CONTENT"),
+  INVALID_AGE_RESTRICTION(HttpStatus.BAD_REQUEST.value(), "INVALID_AGE_RESTRICTION"),
+  INVALID_BOOKING_POLICY(HttpStatus.BAD_REQUEST.value(), "INVALID_BOOKING_POLICY"),
+  INVALID_ADMISSION_POLICY(HttpStatus.BAD_REQUEST.value(), "INVALID_ADMISSION_POLICY"),
+  INVALID_REFUND_POLICY(HttpStatus.BAD_REQUEST.value(), "INVALID_REFUND_POLICY"),
+  INVALID_SEAT_GRADE(HttpStatus.BAD_REQUEST.value(), "INVALID_SEAT_GRADE"),
+
+  // 검증 - 심사 제출
+  CONTENT_REQUIRED_FOR_SUBMISSION(
+      HttpStatus.BAD_REQUEST.value(), "CONTENT_REQUIRED_FOR_SUBMISSION"),
 
   // 비즈니스 규칙
   STAGE_CHANGE_NOT_ALLOWED(HttpStatus.UNPROCESSABLE_ENTITY.value(), "STAGE_CHANGE_NOT_ALLOWED"),
@@ -39,6 +56,7 @@ public enum ProductErrorCode implements ErrorCode {
   // 좌석
   INVALID_SEAT_COUNT(HttpStatus.BAD_REQUEST.value(), "INVALID_SEAT_COUNT"),
   NOT_ENOUGH_SEATS(HttpStatus.UNPROCESSABLE_ENTITY.value(), "NOT_ENOUGH_SEATS"),
+  SEAT_GRADE_NOT_FOUND(HttpStatus.NOT_FOUND.value(), "SEAT_GRADE_NOT_FOUND"),
 
   // 일정 정합성
   SALE_MUST_START_BEFORE_EVENT(HttpStatus.BAD_REQUEST.value(), "SALE_MUST_START_BEFORE_EVENT"),

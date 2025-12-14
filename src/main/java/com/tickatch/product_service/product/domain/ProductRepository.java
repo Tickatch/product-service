@@ -91,4 +91,7 @@ public interface ProductRepository {
    * @return 조건에 맞는 상품 목록
    */
   List<Product> findByStatusAndEndAtBefore(ProductStatus status, LocalDateTime time);
+
+  /** 테스트용 */
+  void flush();
 }

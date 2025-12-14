@@ -12,6 +12,7 @@ import lombok.Getter;
  * <p>ReservationSeat 서비스에서 좌석이 취소/해제되면 발행된다. Product 서비스는 이를 수신하여 좌석 현황과 통계를 복구한다.
  *
  * <p>이벤트 정보:
+ *
  * <ul>
  *   <li>Aggregate Type: ReservationSeat
  *   <li>Routing Key: seat.released
@@ -20,6 +21,7 @@ import lombok.Getter;
  * </ul>
  *
  * <p>처리 내용:
+ *
  * <ul>
  *   <li>SeatSummary.availableSeats 증가
  *   <li>ProductStats.reservationCount 감소
