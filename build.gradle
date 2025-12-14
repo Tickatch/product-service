@@ -31,6 +31,7 @@ repositories {
 
 ext {
     set('springCloudVersion', "2025.0.0")
+    set('queryDslVersion', "5.1.0")  // QueryDSL 버전 추가
 }
 
 dependencyManagement {
@@ -45,11 +46,30 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+    // ========================================
+    // Security (common-lib에서 필요)
+    // ========================================
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // ========================================
+    // Kafka 추가
+    // ========================================
+    implementation 'org.springframework.kafka:spring-kafka'
+
+    // ========================================
+    // QueryDSL 추가
+    // ========================================
+    implementation "com.querydsl:querydsl-jpa:${queryDslVersion}:jakarta"
+    annotationProcessor "com.querydsl:querydsl-apt:${queryDslVersion}:jakarta"
+    annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+    annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+
     // docker-compose
     developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 
     // Metrics - Prometheus
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+    implementation 'io.prometheus:prometheus-metrics-exporter-pushgateway'
 
     // Tracing - Zipkin Brave
     implementation 'io.micrometer:micrometer-tracing-bridge-brave'
@@ -69,7 +89,7 @@ dependencies {
     // PostgreSQL
     implementation 'org.postgresql:postgresql'
 
-    implementation 'io.github.tickatch:common-lib:0.0.1'
+    implementation 'io.github.tickatch:common-lib:0.0.4'
 
     // lombok
     compileOnly 'org.projectlombok:lombok'
@@ -80,15 +100,36 @@ dependencies {
     // archunit
     testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.1'
 
+    // SpotBugs 분석용 (누락된 어노테이션 해결)
+    compileOnly 'org.jetbrains:annotations:24.0.0'
+
     runtimeOnly 'com.h2database:h2'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.kafka:spring-kafka-test'  // Kafka 테스트 추가
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     // mockito javaagent
     mockitoAgent('org.mockito:mockito-core') {
         transitive = false
     }
+}
+
+// ========================================
+// QueryDSL 설정
+// ========================================
+def querydslDir = "$buildDir/generated/querydsl"
+
+sourceSets {
+    main.java.srcDirs += [querydslDir]
+}
+
+tasks.named('compileJava') {
+    options.generatedSourceOutputDirectory = file(querydslDir)
+}
+
+clean {
+    delete file(querydslDir)
 }
 
 tasks.withType(Test) {
@@ -116,4 +157,8 @@ spotless {
 
 tasks.check {
     dependsOn 'spotlessCheck'
+}
+
+tasks.named('spotbugsMain') {
+    dependsOn 'compileJava'
 }
