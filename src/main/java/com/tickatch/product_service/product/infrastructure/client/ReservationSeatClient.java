@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
  * @author Tickatch
  * @since 1.0.0
  */
-@FeignClient(name = "reservation-seat-service", path = "/api/v1/reservation-seats")
+@FeignClient(name = "reservation-seat-service", path = "/api/v1/internal/reservation-seats")
 public interface ReservationSeatClient {
 
   /**

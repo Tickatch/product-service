@@ -68,20 +68,21 @@ public class RabbitMQConfig {
   // ========================================
 
   /** 좌석 예약 이벤트 수신 큐 (from ReservationSeat) */
-  public static final String QUEUE_SEAT_RESERVED_PRODUCT = "tickatch.seat.reserved.product.queue";
+  public static final String QUEUE_SEAT_RESERVED_PRODUCT =
+      "tickatch.reservation-seat.preempt.product.queue";
 
   /** 좌석 해제 이벤트 수신 큐 (from ReservationSeat) */
-  public static final String QUEUE_SEAT_RELEASED_PRODUCT = "tickatch.seat.released.product.queue";
-
+  public static final String QUEUE_SEAT_RELEASED_PRODUCT =
+      "tickatch.reservation-seat.canceled.product.queue";
   // ========================================
   // Routing Keys - Product 수신용
   // ========================================
 
   /** 좌석 예약 이벤트 라우팅 키 */
-  public static final String ROUTING_KEY_SEAT_RESERVED = "seat.reserved";
+  public static final String ROUTING_KEY_SEAT_RESERVED = "reservation-seat.preempt.product";
 
   /** 좌석 해제 이벤트 라우팅 키 */
-  public static final String ROUTING_KEY_SEAT_RELEASED = "seat.released";
+  public static final String ROUTING_KEY_SEAT_RELEASED = "reservation-seat.canceled.product";
 
   // ========================================
   // Exchange - Product 발행용
@@ -162,7 +163,7 @@ public class RabbitMQConfig {
   public Queue seatReservedProductQueue() {
     return QueueBuilder.durable(QUEUE_SEAT_RESERVED_PRODUCT)
         .withArgument("x-dead-letter-exchange", reservationSeatExchange + ".dlx")
-        .withArgument("x-dead-letter-routing-key", "dlq." + ROUTING_KEY_SEAT_RESERVED + ".product")
+        .withArgument("x-dead-letter-routing-key", "dlq." + ROUTING_KEY_SEAT_RESERVED)
         .build();
   }
 
@@ -177,7 +178,7 @@ public class RabbitMQConfig {
   public Queue seatReleasedProductQueue() {
     return QueueBuilder.durable(QUEUE_SEAT_RELEASED_PRODUCT)
         .withArgument("x-dead-letter-exchange", reservationSeatExchange + ".dlx")
-        .withArgument("x-dead-letter-routing-key", "dlq." + ROUTING_KEY_SEAT_RELEASED + ".product")
+        .withArgument("x-dead-letter-routing-key", "dlq." + ROUTING_KEY_SEAT_RELEASED)
         .build();
   }
 
@@ -367,7 +368,7 @@ public class RabbitMQConfig {
       Queue seatReservedProductDlq, TopicExchange reservationSeatDeadLetterExchange) {
     return BindingBuilder.bind(seatReservedProductDlq)
         .to(reservationSeatDeadLetterExchange)
-        .with("dlq." + ROUTING_KEY_SEAT_RESERVED + ".product");
+        .with("dlq." + ROUTING_KEY_SEAT_RESERVED);
   }
 
   /**
@@ -382,7 +383,7 @@ public class RabbitMQConfig {
       Queue seatReleasedProductDlq, TopicExchange reservationSeatDeadLetterExchange) {
     return BindingBuilder.bind(seatReleasedProductDlq)
         .to(reservationSeatDeadLetterExchange)
-        .with("dlq." + ROUTING_KEY_SEAT_RELEASED + ".product");
+        .with("dlq." + ROUTING_KEY_SEAT_RELEASED);
   }
 
   // ========================================
