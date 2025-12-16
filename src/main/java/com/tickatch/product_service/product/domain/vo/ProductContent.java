@@ -8,6 +8,8 @@ import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * 상품 콘텐츠 Value Object.
@@ -52,6 +54,7 @@ public final class ProductContent {
 
   /** 상세 이미지 URL 배열 (JSON) */
   @Column(name = "detail_image_urls", columnDefinition = "JSON")
+  @JdbcTypeCode(SqlTypes.JSON)
   private String detailImageUrls;
 
   /** 출연진/아티스트 정보 */
