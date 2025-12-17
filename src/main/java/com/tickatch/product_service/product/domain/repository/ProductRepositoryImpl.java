@@ -176,6 +176,7 @@ public class ProductRepositoryImpl implements ProductRepository {
                 case "updatedAt" -> new OrderSpecifier<>(direction, product.updatedAt);
                 case "status" -> new OrderSpecifier<>(direction, product.status);
                 case "productType" -> new OrderSpecifier<>(direction, product.productType);
+                case "viewCount" -> new OrderSpecifier<>(direction, product.stats.viewCount);
                 default -> new OrderSpecifier<>(direction, product.createdAt);
               };
           orderSpecifiers.add(orderSpecifier);
