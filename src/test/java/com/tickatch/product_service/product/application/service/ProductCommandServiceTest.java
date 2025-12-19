@@ -11,6 +11,7 @@ import com.tickatch.product_service.product.application.dto.ProductCreateCommand
 import com.tickatch.product_service.product.application.dto.ProductCreateCommand.SeatGradeInfo;
 import com.tickatch.product_service.product.application.dto.ProductUpdateCommand;
 import com.tickatch.product_service.product.application.messaging.ProductEventPublisher;
+import com.tickatch.product_service.product.application.messaging.ProductLogEventPublisher;
 import com.tickatch.product_service.product.domain.Product;
 import com.tickatch.product_service.product.domain.ProductRepository;
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
@@ -59,6 +60,8 @@ class ProductCommandServiceTest {
   @Mock private ProductRepository productRepository;
 
   @Mock private ProductEventPublisher productEventPublisher;
+
+  @Mock private ProductLogEventPublisher productLogEventPublisher;
 
   @Mock private ReservationSeatClient reservationSeatClient;
 

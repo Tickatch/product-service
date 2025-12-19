@@ -19,8 +19,10 @@ import org.springframework.context.annotation.Configuration;
  * <p>구성 요소:
  *
  * <ul>
- *   <li>Exchange: tickatch.product (Topic)
+ *   <li>Exchange: tickatch.product (Topic) - 도메인 이벤트용
+ *   <li>Exchange: tickatch.log (Topic) - 로그 이벤트용
  *   <li>Queue: 서비스별 취소 이벤트 큐 2개 (ReservationSeat, Reservation)
+ *   <li>Queue: 로그 서비스용 상품 로그 큐 1개
  *   <li>DLQ: 각 큐별 Dead Letter Queue
  * </ul>
  *
@@ -39,6 +41,9 @@ public class RabbitMQConfig {
 
   @Value("${messaging.exchange.reservation-seat:tickatch.reservation-seat}")
   private String reservationSeatExchange;
+
+  @Value("${messaging.exchange.log:tickatch.log}")
+  private String logExchange;
 
   // ========================================
   // Queue Names - Product 발행용
@@ -74,6 +79,7 @@ public class RabbitMQConfig {
   /** 좌석 해제 이벤트 수신 큐 (from ReservationSeat) */
   public static final String QUEUE_SEAT_RELEASED_PRODUCT =
       "tickatch.reservation-seat.canceled.product.queue";
+
   // ========================================
   // Routing Keys - Product 수신용
   // ========================================
@@ -83,6 +89,28 @@ public class RabbitMQConfig {
 
   /** 좌석 해제 이벤트 라우팅 키 */
   public static final String ROUTING_KEY_SEAT_RELEASED = "reservation-seat.canceled.product";
+
+  // ========================================
+  // Queue Names - 로그 발행용
+  // ========================================
+
+  /**
+   * 상품 로그 큐 이름.
+   *
+   * <p>로그 서비스에서 상품 관련 로그를 수신하기 위한 큐이다. 상품 생성, 수정, 상태 변경 등의 로그 이벤트가 이 큐로 전송된다.
+   */
+  public static final String QUEUE_PRODUCT_LOG = "tickatch.product.log.queue";
+
+  // ========================================
+  // Routing Keys - 로그 발행용
+  // ========================================
+
+  /**
+   * 상품 로그 라우팅 키.
+   *
+   * <p>로그 Exchange에서 상품 로그 큐로 라우팅하기 위한 키이다.
+   */
+  public static final String ROUTING_KEY_PRODUCT_LOG = "product.log";
 
   // ========================================
   // Exchange - Product 발행용
@@ -112,6 +140,23 @@ public class RabbitMQConfig {
   @Bean
   public TopicExchange reservationSeatExchange() {
     return ExchangeBuilder.topicExchange(reservationSeatExchange).durable(true).build();
+  }
+
+  // ========================================
+  // Exchange - 로그 발행용
+  // ========================================
+
+  /**
+   * 로그 이벤트용 Topic Exchange를 생성한다.
+   *
+   * <p>로그 서비스에서 정의한 Exchange이지만, Product 서비스에서도 로그 메시지 발행을 위해 선언한다. 상품 관련 로그 이벤트가 이 Exchange를 통해 로그
+   * 서비스로 전달된다.
+   *
+   * @return durable Topic Exchange
+   */
+  @Bean
+  public TopicExchange logExchange() {
+    return ExchangeBuilder.topicExchange(logExchange).durable(true).build();
   }
 
   // ========================================
@@ -179,6 +224,25 @@ public class RabbitMQConfig {
     return QueueBuilder.durable(QUEUE_SEAT_RELEASED_PRODUCT)
         .withArgument("x-dead-letter-exchange", reservationSeatExchange + ".dlx")
         .withArgument("x-dead-letter-routing-key", "dlq." + ROUTING_KEY_SEAT_RELEASED)
+        .build();
+  }
+
+  // ========================================
+  // Queues - 로그 발행용
+  // ========================================
+
+  /**
+   * 상품 로그 큐를 생성한다.
+   *
+   * <p>로그 서비스에서 정의한 큐이지만, Product 서비스에서도 바인딩 선언을 위해 정의한다. 메시지 처리 실패 시 DLQ로 이동한다.
+   *
+   * @return DLQ 설정이 포함된 durable Queue
+   */
+  @Bean
+  public Queue productLogQueue() {
+    return QueueBuilder.durable(QUEUE_PRODUCT_LOG)
+        .withArgument("x-dead-letter-exchange", logExchange + ".dlx")
+        .withArgument("x-dead-letter-routing-key", "dlq." + ROUTING_KEY_PRODUCT_LOG)
         .build();
   }
 
@@ -252,6 +316,25 @@ public class RabbitMQConfig {
     return BindingBuilder.bind(seatReleasedProductQueue)
         .to(reservationSeatExchange)
         .with(ROUTING_KEY_SEAT_RELEASED);
+  }
+
+  // ========================================
+  // Bindings - 로그 발행용
+  // ========================================
+
+  /**
+   * 상품 로그 큐와 로그 Exchange를 바인딩한다.
+   *
+   * <p>로그 Exchange의 product.log 라우팅 키를 상품 로그 큐에 바인딩한다. Product 서비스에서 발행한 로그 메시지가 이 바인딩을 통해 로그 서비스의
+   * 상품 로그 큐로 전달된다.
+   *
+   * @param productLogQueue 바인딩할 큐
+   * @param logExchange 바인딩할 Exchange
+   * @return 라우팅 키로 연결된 Binding
+   */
+  @Bean
+  public Binding productLogBinding(Queue productLogQueue, TopicExchange logExchange) {
+    return BindingBuilder.bind(productLogQueue).to(logExchange).with(ROUTING_KEY_PRODUCT_LOG);
   }
 
   // ========================================
@@ -384,6 +467,48 @@ public class RabbitMQConfig {
     return BindingBuilder.bind(seatReleasedProductDlq)
         .to(reservationSeatDeadLetterExchange)
         .with("dlq." + ROUTING_KEY_SEAT_RELEASED);
+  }
+
+  // ========================================
+  // Dead Letter Exchange & Queues - 로그 발행용
+  // ========================================
+
+  /**
+   * 로그 Dead Letter Exchange를 생성한다.
+   *
+   * <p>로그 서비스에서 정의한 DLX이지만, Product 서비스에서도 DLQ 바인딩 선언을 위해 정의한다.
+   *
+   * @return DLX용 Topic Exchange
+   */
+  @Bean
+  public TopicExchange logDeadLetterExchange() {
+    return ExchangeBuilder.topicExchange(logExchange + ".dlx").durable(true).build();
+  }
+
+  /**
+   * 상품 로그 Dead Letter Queue를 생성한다.
+   *
+   * <p>상품 로그 메시지 처리 실패 시 이 큐로 이동된다.
+   *
+   * @return durable DLQ
+   */
+  @Bean
+  public Queue productLogDlq() {
+    return QueueBuilder.durable(QUEUE_PRODUCT_LOG + ".dlq").build();
+  }
+
+  /**
+   * 상품 로그 DLQ와 로그 DLX를 바인딩한다.
+   *
+   * @param productLogDlq 바인딩할 DLQ
+   * @param logDeadLetterExchange 바인딩할 DLX
+   * @return DLQ Binding
+   */
+  @Bean
+  public Binding productLogDlqBinding(Queue productLogDlq, TopicExchange logDeadLetterExchange) {
+    return BindingBuilder.bind(productLogDlq)
+        .to(logDeadLetterExchange)
+        .with("dlq." + ROUTING_KEY_PRODUCT_LOG);
   }
 
   // ========================================
