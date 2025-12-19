@@ -89,7 +89,7 @@ dependencies {
     // PostgreSQL
     implementation 'org.postgresql:postgresql'
 
-    implementation 'io.github.tickatch:common-lib:0.0.4'
+    implementation 'io.github.tickatch:common-lib:0.0.5'
 
     // lombok
     compileOnly 'org.projectlombok:lombok'
