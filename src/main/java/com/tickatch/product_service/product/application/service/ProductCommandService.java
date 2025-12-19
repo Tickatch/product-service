@@ -6,6 +6,7 @@ import com.tickatch.product_service.product.application.dto.ProductCreateCommand
 import com.tickatch.product_service.product.application.dto.ProductUpdateCommand;
 import com.tickatch.product_service.product.application.dto.SeatCreateRequest;
 import com.tickatch.product_service.product.application.messaging.ProductEventPublisher;
+import com.tickatch.product_service.product.application.messaging.ProductLogEventPublisher;
 import com.tickatch.product_service.product.domain.Product;
 import com.tickatch.product_service.product.domain.ProductRepository;
 import com.tickatch.product_service.product.domain.exception.ProductErrorCode;
@@ -34,10 +35,13 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>상품의 생성, 수정, 삭제 등 상태 변경과 관련된 비즈니스 로직을 처리한다. 서비스는 "명세서 조립자" 역할을 수행하며, Command에서 받은 데이터를 VO로 조립하여
  * 도메인에 전달한다.
  *
+ * <p>모든 주요 작업에 대해 성공/실패 로그를 로그 서비스로 발행한다.
+ *
  * @author Tickatch
  * @since 1.0.0
  * @see ProductQueryService
  * @see ProductEventPublisher
+ * @see ProductLogEventPublisher
  */
 @Slf4j
 @Transactional
@@ -47,6 +51,7 @@ public class ProductCommandService {
 
   private final ProductRepository productRepository;
   private final ProductEventPublisher eventPublisher;
+  private final ProductLogEventPublisher logEventPublisher;
   private final ReservationSeatClient reservationSeatClient;
 
   // ========== 생성 ==========
@@ -57,63 +62,76 @@ public class ProductCommandService {
    * <p>새 상품은 DRAFT 상태로 생성된다. 서비스가 VO를 조립하여 도메인에 주입한다. 생성 후 SeatGrade를 추가하고 ReservationSeat 서비스에 개별
    * 좌석 생성을 요청한다.
    *
+   * <p>성공 시 CREATED 로그를, 실패 시 CREATE_FAILED 로그를 발행한다.
+   *
    * @param command 상품 생성 명령
    * @return 생성된 상품 ID
    * @throws IllegalArgumentException Command 검증 실패 시
    * @throws ProductException 도메인 검증 실패 시
    */
   public Long createProduct(ProductCreateCommand command) {
-    // 1. Command 검증
-    command.validateRequired();
-    command.validateValueObjectSets();
-    command.validateSeatConsistency();
+    try {
+      // 1. Command 검증
+      command.validateRequired();
+      command.validateValueObjectSets();
+      command.validateSeatConsistency();
 
-    // 2. VO 조립
-    Schedule schedule = new Schedule(command.getStartAt(), command.getEndAt());
-    SaleSchedule saleSchedule = new SaleSchedule(command.getSaleStartAt(), command.getSaleEndAt());
-    Venue venue = assembleVenue(command);
-    ProductContent content = assembleContent(command);
-    AgeRestriction ageRestriction = assembleAgeRestriction(command);
-    BookingPolicy bookingPolicy = assembleBookingPolicy(command);
-    AdmissionPolicy admissionPolicy = assembleAdmissionPolicy(command);
-    RefundPolicy refundPolicy = assembleRefundPolicy(command);
+      // 2. VO 조립
+      Schedule schedule = new Schedule(command.getStartAt(), command.getEndAt());
+      SaleSchedule saleSchedule =
+          new SaleSchedule(command.getSaleStartAt(), command.getSaleEndAt());
+      Venue venue = assembleVenue(command);
+      ProductContent content = assembleContent(command);
+      AgeRestriction ageRestriction = assembleAgeRestriction(command);
+      BookingPolicy bookingPolicy = assembleBookingPolicy(command);
+      AdmissionPolicy admissionPolicy = assembleAdmissionPolicy(command);
+      RefundPolicy refundPolicy = assembleRefundPolicy(command);
 
-    // 3. Product 생성
-    Product product =
-        Product.create(
-            command.getSellerId(),
-            command.getName(),
-            command.getProductType(),
-            command.getRunningTime(),
-            schedule,
-            saleSchedule,
-            venue,
-            content,
-            ageRestriction,
-            bookingPolicy,
-            admissionPolicy,
-            refundPolicy);
+      // 3. Product 생성
+      Product product =
+          Product.create(
+              command.getSellerId(),
+              command.getName(),
+              command.getProductType(),
+              command.getRunningTime(),
+              schedule,
+              saleSchedule,
+              venue,
+              content,
+              ageRestriction,
+              bookingPolicy,
+              admissionPolicy,
+              refundPolicy);
 
-    // 4. SeatGrade 추가 (배열 순서대로 displayOrder)
-    List<SeatGradeInfo> gradeInfos = command.getSeatGradeInfos();
-    for (int i = 0; i < gradeInfos.size(); i++) {
-      SeatGradeInfo info = gradeInfos.get(i);
-      product.addSeatGrade(info.gradeName(), info.price(), info.totalSeats(), i + 1);
+      // 4. SeatGrade 추가 (배열 순서대로 displayOrder)
+      List<SeatGradeInfo> gradeInfos = command.getSeatGradeInfos();
+      for (int i = 0; i < gradeInfos.size(); i++) {
+        SeatGradeInfo info = gradeInfos.get(i);
+        product.addSeatGrade(info.gradeName(), info.price(), info.totalSeats(), i + 1);
+      }
+
+      // 5. 저장
+      Product saved = productRepository.save(product);
+
+      // 6. ReservationSeat 서비스에 개별 좌석 생성 요청
+      createReservationSeats(saved.getId(), command.getSeatCreateInfos());
+
+      log.info(
+          "상품 생성 완료. productId: {}, seatGrades: {}, seatCreateInfos: {}",
+          saved.getId(),
+          gradeInfos.size(),
+          command.getSeatCreateInfos().size());
+
+      // 7. 성공 로그 발행
+      logEventPublisher.publishCreated(saved.getId());
+
+      return saved.getId();
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishCreateFailed();
+      log.error("상품 생성 실패. sellerId: {}, error: {}", command.getSellerId(), e.getMessage(), e);
+      throw e;
     }
-
-    // 5. 저장
-    Product saved = productRepository.save(product);
-
-    // 6. ReservationSeat 서비스에 개별 좌석 생성 요청
-    createReservationSeats(saved.getId(), command.getSeatCreateInfos());
-
-    log.info(
-        "상품 생성 완료. productId: {}, seatGrades: {}, seatCreateInfos: {}",
-        saved.getId(),
-        gradeInfos.size(),
-        command.getSeatCreateInfos().size());
-
-    return saved.getId();
   }
 
   // ========== 수정 ==========
@@ -123,6 +141,8 @@ public class ProductCommandService {
    *
    * <p>DRAFT 또는 REJECTED 상태에서만 수정 가능하다. null이 아닌 필드만 수정되며, 값객체는 세트 단위로 수정된다.
    *
+   * <p>성공 시 UPDATED 로그를, 실패 시 UPDATE_FAILED 로그를 발행한다.
+   *
    * @param command 상품 수정 명령
    * @throws IllegalArgumentException Command 검증 실패 시
    * @throws ProductException 상품을 찾을 수 없는 경우 ({@link ProductErrorCode#PRODUCT_NOT_FOUND})
@@ -130,75 +150,90 @@ public class ProductCommandService {
    * @throws ProductException 수정 불가능한 상태인 경우 ({@link ProductErrorCode#PRODUCT_NOT_EDITABLE})
    */
   public void updateProduct(ProductUpdateCommand command) {
-    // 1. Command 검증
-    command.validateRequired();
-    command.validateValueObjectSets();
-    command.validateSeatConsistency();
+    try {
+      // 1. Command 검증
+      command.validateRequired();
+      command.validateValueObjectSets();
+      command.validateSeatConsistency();
 
-    // 2. 상품 조회 및 소유권 검증
-    Product product = findProductById(command.getProductId());
-    validateOwnership(product, command.getSellerId());
+      // 2. 상품 조회 및 소유권 검증
+      Product product = findProductById(command.getProductId());
+      validateOwnership(product, command.getSellerId());
 
-    // 3. 기본 정보 수정
-    if (command.hasBasicInfo()) {
-      updateBasicInfo(product, command);
+      // 3. 기본 정보 수정
+      if (command.hasBasicInfo()) {
+        updateBasicInfo(product, command);
+      }
+
+      // 4. 일정 수정
+      if (command.hasSchedule()) {
+        Schedule schedule = new Schedule(command.getStartAt(), command.getEndAt());
+        SaleSchedule saleSchedule =
+            new SaleSchedule(command.getSaleStartAt(), command.getSaleEndAt());
+        product.update(
+            command.getName() != null ? command.getName() : product.getName(),
+            command.getProductType() != null ? command.getProductType() : product.getProductType(),
+            command.getRunningTime() != null ? command.getRunningTime() : product.getRunningTime(),
+            schedule,
+            saleSchedule);
+      }
+
+      // 5. 장소 수정
+      if (command.hasVenue()) {
+        Venue venue = assembleVenueFromUpdate(command);
+        product.changeVenue(venue);
+      }
+
+      // 6. 콘텐츠 수정
+      if (command.hasContent()) {
+        ProductContent content = assembleContentFromUpdate(command, product);
+        product.updateContent(content);
+      }
+
+      // 7. 관람 제한 수정
+      if (command.hasAgeRestriction()) {
+        AgeRestriction ageRestriction = assembleAgeRestrictionFromUpdate(command);
+        product.updateAgeRestriction(ageRestriction);
+      }
+
+      // 8. 예매 정책 수정
+      if (command.hasBookingPolicy()) {
+        BookingPolicy bookingPolicy = assembleBookingPolicyFromUpdate(command);
+        product.updateBookingPolicy(bookingPolicy);
+      }
+
+      // 9. 입장 정책 수정
+      if (command.hasAdmissionPolicy()) {
+        AdmissionPolicy admissionPolicy = assembleAdmissionPolicyFromUpdate(command);
+        product.updateAdmissionPolicy(admissionPolicy);
+      }
+
+      // 10. 환불 정책 수정
+      if (command.hasRefundPolicy()) {
+        RefundPolicy refundPolicy = assembleRefundPolicyFromUpdate(command);
+        product.updateRefundPolicy(refundPolicy);
+      }
+
+      // 11. 좌석 정보 수정 (전체 교체)
+      if (command.hasSeatGradeInfos()) {
+        updateSeatGrades(product, command);
+      }
+
+      log.info("상품 수정 완료. productId: {}", command.getProductId());
+
+      // 12. 성공 로그 발행
+      logEventPublisher.publishUpdated(command.getProductId());
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishUpdateFailed(command.getProductId());
+      log.error(
+          "상품 수정 실패. productId: {}, sellerId: {}, error: {}",
+          command.getProductId(),
+          command.getSellerId(),
+          e.getMessage(),
+          e);
+      throw e;
     }
-
-    // 4. 일정 수정
-    if (command.hasSchedule()) {
-      Schedule schedule = new Schedule(command.getStartAt(), command.getEndAt());
-      SaleSchedule saleSchedule =
-          new SaleSchedule(command.getSaleStartAt(), command.getSaleEndAt());
-      product.update(
-          command.getName() != null ? command.getName() : product.getName(),
-          command.getProductType() != null ? command.getProductType() : product.getProductType(),
-          command.getRunningTime() != null ? command.getRunningTime() : product.getRunningTime(),
-          schedule,
-          saleSchedule);
-    }
-
-    // 5. 장소 수정
-    if (command.hasVenue()) {
-      Venue venue = assembleVenueFromUpdate(command);
-      product.changeVenue(venue);
-    }
-
-    // 6. 콘텐츠 수정
-    if (command.hasContent()) {
-      ProductContent content = assembleContentFromUpdate(command, product);
-      product.updateContent(content);
-    }
-
-    // 7. 관람 제한 수정
-    if (command.hasAgeRestriction()) {
-      AgeRestriction ageRestriction = assembleAgeRestrictionFromUpdate(command);
-      product.updateAgeRestriction(ageRestriction);
-    }
-
-    // 8. 예매 정책 수정
-    if (command.hasBookingPolicy()) {
-      BookingPolicy bookingPolicy = assembleBookingPolicyFromUpdate(command);
-      product.updateBookingPolicy(bookingPolicy);
-    }
-
-    // 9. 입장 정책 수정
-    if (command.hasAdmissionPolicy()) {
-      AdmissionPolicy admissionPolicy = assembleAdmissionPolicyFromUpdate(command);
-      product.updateAdmissionPolicy(admissionPolicy);
-    }
-
-    // 10. 환불 정책 수정
-    if (command.hasRefundPolicy()) {
-      RefundPolicy refundPolicy = assembleRefundPolicyFromUpdate(command);
-      product.updateRefundPolicy(refundPolicy);
-    }
-
-    // 11. 좌석 정보 수정 (전체 교체)
-    if (command.hasSeatGradeInfos()) {
-      updateSeatGrades(product, command);
-    }
-
-    log.info("상품 수정 완료. productId: {}", command.getProductId());
   }
 
   /** 기본 정보만 수정한다 (일정 변경 없이). */
@@ -260,6 +295,8 @@ public class ProductCommandService {
    *
    * <p>DRAFT 상태에서 PENDING 상태로 변경한다.
    *
+   * <p>성공 시 SUBMITTED_FOR_APPROVAL 로그를, 실패 시 SUBMIT_FOR_APPROVAL_FAILED 로그를 발행한다.
+   *
    * @param productId 상품 ID
    * @param sellerId 요청한 판매자 ID
    * @throws ProductException 상품을 찾을 수 없는 경우
@@ -267,11 +304,26 @@ public class ProductCommandService {
    * @throws ProductException 상태 변경이 불가능한 경우
    */
   public void submitForApproval(Long productId, String sellerId) {
-    Product product = findProductById(productId);
-    validateOwnership(product, sellerId);
+    try {
+      Product product = findProductById(productId);
+      validateOwnership(product, sellerId);
 
-    product.changeStatus(ProductStatus.PENDING);
-    log.info("심사 요청 완료. productId: {}", productId);
+      product.changeStatus(ProductStatus.PENDING);
+      log.info("심사 요청 완료. productId: {}", productId);
+
+      // 성공 로그 발행
+      logEventPublisher.publishSubmittedForApproval(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishSubmitForApprovalFailed(productId);
+      log.error(
+          "심사 요청 실패. productId: {}, sellerId: {}, error: {}",
+          productId,
+          sellerId,
+          e.getMessage(),
+          e);
+      throw e;
+    }
   }
 
   /**
@@ -279,20 +331,34 @@ public class ProductCommandService {
    *
    * <p>PENDING 상태에서 APPROVED 상태로 변경한다.
    *
+   * <p>성공 시 APPROVED 로그를, 실패 시 APPROVE_FAILED 로그를 발행한다.
+   *
    * @param productId 상품 ID
    * @throws ProductException 상품을 찾을 수 없는 경우
    * @throws ProductException PENDING 상태가 아닌 경우
    */
   public void approveProduct(Long productId) {
-    Product product = findProductById(productId);
-    product.approve();
-    log.info("상품 승인 완료. productId: {}", productId);
+    try {
+      Product product = findProductById(productId);
+      product.approve();
+      log.info("상품 승인 완료. productId: {}", productId);
+
+      // 성공 로그 발행
+      logEventPublisher.publishApproved(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishApproveFailed(productId);
+      log.error("상품 승인 실패. productId: {}, error: {}", productId, e.getMessage(), e);
+      throw e;
+    }
   }
 
   /**
    * 상품을 반려한다.
    *
    * <p>PENDING 상태에서 REJECTED 상태로 변경한다.
+   *
+   * <p>성공 시 REJECTED 로그를, 실패 시 REJECT_FAILED 로그를 발행한다.
    *
    * @param productId 상품 ID
    * @param reason 반려 사유
@@ -301,15 +367,27 @@ public class ProductCommandService {
    * @throws ProductException 반려 사유가 없는 경우
    */
   public void rejectProduct(Long productId, String reason) {
-    Product product = findProductById(productId);
-    product.reject(reason);
-    log.info("상품 반려 완료. productId: {}, reason: {}", productId, reason);
+    try {
+      Product product = findProductById(productId);
+      product.reject(reason);
+      log.info("상품 반려 완료. productId: {}, reason: {}", productId, reason);
+
+      // 성공 로그 발행
+      logEventPublisher.publishRejected(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishRejectFailed(productId);
+      log.error("상품 반려 실패. productId: {}, error: {}", productId, e.getMessage(), e);
+      throw e;
+    }
   }
 
   /**
    * 반려된 상품을 재제출한다.
    *
    * <p>REJECTED 상태에서 DRAFT 상태로 변경한다.
+   *
+   * <p>성공 시 RESUBMITTED 로그를, 실패 시 RESUBMIT_FAILED 로그를 발행한다.
    *
    * @param productId 상품 ID
    * @param sellerId 요청한 판매자 ID
@@ -318,11 +396,26 @@ public class ProductCommandService {
    * @throws ProductException REJECTED 상태가 아닌 경우
    */
   public void resubmitProduct(Long productId, String sellerId) {
-    Product product = findProductById(productId);
-    validateOwnership(product, sellerId);
+    try {
+      Product product = findProductById(productId);
+      validateOwnership(product, sellerId);
 
-    product.resubmit();
-    log.info("상품 재제출 완료. productId: {}", productId);
+      product.resubmit();
+      log.info("상품 재제출 완료. productId: {}", productId);
+
+      // 성공 로그 발행
+      logEventPublisher.publishResubmitted(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishResubmitFailed(productId);
+      log.error(
+          "상품 재제출 실패. productId: {}, sellerId: {}, error: {}",
+          productId,
+          sellerId,
+          e.getMessage(),
+          e);
+      throw e;
+    }
   }
 
   // ========== 상태 변경 ==========
@@ -332,14 +425,26 @@ public class ProductCommandService {
    *
    * <p>APPROVED 상태에서 SCHEDULED 상태로 변경한다. 예매 시작일이 다가오면 스케줄러가 호출한다.
    *
+   * <p>성공 시 SCHEDULED 로그를, 실패 시 SCHEDULE_FAILED 로그를 발행한다.
+   *
    * @param productId 상품 ID
    * @throws ProductException 상품을 찾을 수 없는 경우
    * @throws ProductException 상태 변경이 불가능한 경우
    */
   public void scheduleProduct(Long productId) {
-    Product product = findProductById(productId);
-    product.changeStatus(ProductStatus.SCHEDULED);
-    log.info("상품 판매 예정 상태 변경. productId: {}", productId);
+    try {
+      Product product = findProductById(productId);
+      product.changeStatus(ProductStatus.SCHEDULED);
+      log.info("상품 판매 예정 상태 변경. productId: {}", productId);
+
+      // 성공 로그 발행
+      logEventPublisher.publishScheduled(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishScheduleFailed(productId);
+      log.error("상품 판매 예정 상태 변경 실패. productId: {}, error: {}", productId, e.getMessage(), e);
+      throw e;
+    }
   }
 
   /**
@@ -347,14 +452,26 @@ public class ProductCommandService {
    *
    * <p>SCHEDULED 상태에서 ON_SALE 상태로 변경한다. 예매 시작일이 되면 스케줄러가 호출한다.
    *
+   * <p>성공 시 SALE_STARTED 로그를, 실패 시 SALE_START_FAILED 로그를 발행한다.
+   *
    * @param productId 상품 ID
    * @throws ProductException 상품을 찾을 수 없는 경우
    * @throws ProductException 상태 변경이 불가능한 경우
    */
   public void startSale(Long productId) {
-    Product product = findProductById(productId);
-    product.changeStatus(ProductStatus.ON_SALE);
-    log.info("상품 판매 시작. productId: {}", productId);
+    try {
+      Product product = findProductById(productId);
+      product.changeStatus(ProductStatus.ON_SALE);
+      log.info("상품 판매 시작. productId: {}", productId);
+
+      // 성공 로그 발행
+      logEventPublisher.publishSaleStarted(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishSaleStartFailed(productId);
+      log.error("상품 판매 시작 실패. productId: {}, error: {}", productId, e.getMessage(), e);
+      throw e;
+    }
   }
 
   /**
@@ -362,14 +479,26 @@ public class ProductCommandService {
    *
    * <p>ON_SALE 상태에서 CLOSED 상태로 변경한다. 예매 종료일이 되거나 행사 시작일이 되면 스케줄러가 호출한다.
    *
+   * <p>성공 시 SALE_CLOSED 로그를, 실패 시 SALE_CLOSE_FAILED 로그를 발행한다.
+   *
    * @param productId 상품 ID
    * @throws ProductException 상품을 찾을 수 없는 경우
    * @throws ProductException 상태 변경이 불가능한 경우
    */
   public void closeSale(Long productId) {
-    Product product = findProductById(productId);
-    product.changeStatus(ProductStatus.CLOSED);
-    log.info("상품 판매 종료. productId: {}", productId);
+    try {
+      Product product = findProductById(productId);
+      product.changeStatus(ProductStatus.CLOSED);
+      log.info("상품 판매 종료. productId: {}", productId);
+
+      // 성공 로그 발행
+      logEventPublisher.publishSaleClosed(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishSaleCloseFailed(productId);
+      log.error("상품 판매 종료 실패. productId: {}, error: {}", productId, e.getMessage(), e);
+      throw e;
+    }
   }
 
   /**
@@ -377,20 +506,34 @@ public class ProductCommandService {
    *
    * <p>CLOSED 상태에서 COMPLETED 상태로 변경한다. 행사가 종료되면 스케줄러가 호출한다.
    *
+   * <p>성공 시 COMPLETED 로그를, 실패 시 COMPLETE_FAILED 로그를 발행한다.
+   *
    * @param productId 상품 ID
    * @throws ProductException 상품을 찾을 수 없는 경우
    * @throws ProductException 상태 변경이 불가능한 경우
    */
   public void completeProduct(Long productId) {
-    Product product = findProductById(productId);
-    product.changeStatus(ProductStatus.COMPLETED);
-    log.info("상품 완료 처리. productId: {}", productId);
+    try {
+      Product product = findProductById(productId);
+      product.changeStatus(ProductStatus.COMPLETED);
+      log.info("상품 완료 처리. productId: {}", productId);
+
+      // 성공 로그 발행
+      logEventPublisher.publishCompleted(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishCompleteFailed(productId);
+      log.error("상품 완료 처리 실패. productId: {}, error: {}", productId, e.getMessage(), e);
+      throw e;
+    }
   }
 
   /**
    * 상품을 취소한다.
    *
    * <p>상품 취소 후 ReservationSeat, Reservation, Ticket 서비스로 취소 이벤트를 발행한다.
+   *
+   * <p>성공 시 CANCELLED 로그를, 실패 시 CANCEL_FAILED 로그를 발행한다.
    *
    * @param productId 취소할 상품 ID
    * @param cancelledBy 취소 요청자 ID
@@ -399,11 +542,26 @@ public class ProductCommandService {
    * @throws ProductException 이벤트 발행 실패 시
    */
   public void cancelProduct(Long productId, String cancelledBy) {
-    Product product = findProductById(productId);
-    product.cancel(cancelledBy);
+    try {
+      Product product = findProductById(productId);
+      product.cancel(cancelledBy);
 
-    eventPublisher.publishCancelled(product);
-    log.info("상품 취소 완료. productId: {}, cancelledBy: {}", productId, cancelledBy);
+      eventPublisher.publishCancelled(product);
+      log.info("상품 취소 완료. productId: {}, cancelledBy: {}", productId, cancelledBy);
+
+      // 성공 로그 발행
+      logEventPublisher.publishCancelled(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishCancelFailed(productId);
+      log.error(
+          "상품 취소 실패. productId: {}, cancelledBy: {}, error: {}",
+          productId,
+          cancelledBy,
+          e.getMessage(),
+          e);
+      throw e;
+    }
   }
 
   // ========== 좌석 관련 (총합) ==========
@@ -413,15 +571,32 @@ public class ProductCommandService {
    *
    * <p>예매 시 호출된다. 동시성 제어를 위해 비관적 락을 사용한다.
    *
+   * <p>성공 시 SEATS_DECREASED 로그를, 실패 시 SEAT_OPERATION_FAILED 로그를 발행한다.
+   *
    * @param productId 상품 ID
    * @param count 차감할 좌석 수
    * @throws ProductException 상품을 찾을 수 없는 경우
    * @throws ProductException 잔여 좌석이 부족한 경우
    */
   public void decreaseAvailableSeats(Long productId, int count) {
-    Product product = findProductByIdForUpdate(productId);
-    product.decreaseAvailableSeats(count);
-    log.debug("잔여 좌석 차감 (총합). productId: {}, count: {}", productId, count);
+    try {
+      Product product = findProductByIdForUpdate(productId);
+      product.decreaseAvailableSeats(count);
+      log.debug("잔여 좌석 차감 (총합). productId: {}, count: {}", productId, count);
+
+      // 성공 로그 발행
+      logEventPublisher.publishSeatsDecreased(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishSeatOperationFailed(productId);
+      log.error(
+          "잔여 좌석 차감 실패. productId: {}, count: {}, error: {}",
+          productId,
+          count,
+          e.getMessage(),
+          e);
+      throw e;
+    }
   }
 
   /**
@@ -429,14 +604,31 @@ public class ProductCommandService {
    *
    * <p>예매 취소 시 호출된다. 동시성 제어를 위해 비관적 락을 사용한다.
    *
+   * <p>성공 시 SEATS_INCREASED 로그를, 실패 시 SEAT_OPERATION_FAILED 로그를 발행한다.
+   *
    * @param productId 상품 ID
    * @param count 복구할 좌석 수
    * @throws ProductException 상품을 찾을 수 없는 경우
    */
   public void increaseAvailableSeats(Long productId, int count) {
-    Product product = findProductByIdForUpdate(productId);
-    product.increaseAvailableSeats(count);
-    log.debug("잔여 좌석 복구 (총합). productId: {}, count: {}", productId, count);
+    try {
+      Product product = findProductByIdForUpdate(productId);
+      product.increaseAvailableSeats(count);
+      log.debug("잔여 좌석 복구 (총합). productId: {}, count: {}", productId, count);
+
+      // 성공 로그 발행
+      logEventPublisher.publishSeatsIncreased(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishSeatOperationFailed(productId);
+      log.error(
+          "잔여 좌석 복구 실패. productId: {}, count: {}, error: {}",
+          productId,
+          count,
+          e.getMessage(),
+          e);
+      throw e;
+    }
   }
 
   // ========== 좌석 관련 (등급별) ==========
@@ -446,6 +638,8 @@ public class ProductCommandService {
    *
    * <p>예매 시 호출된다. SeatGrade와 SeatSummary 모두 갱신된다. 동시성 제어를 위해 비관적 락을 사용한다.
    *
+   * <p>성공 시 SEAT_GRADE_DECREASED 로그를, 실패 시 SEAT_OPERATION_FAILED 로그를 발행한다.
+   *
    * @param productId 상품 ID
    * @param gradeName 등급명
    * @param count 차감할 좌석 수
@@ -454,15 +648,33 @@ public class ProductCommandService {
    * @throws ProductException 잔여 좌석이 부족한 경우
    */
   public void decreaseSeatGradeAvailable(Long productId, String gradeName, int count) {
-    Product product = findProductByIdForUpdate(productId);
-    product.decreaseSeatGradeAvailable(gradeName, count);
-    log.debug("등급별 좌석 차감. productId: {}, grade: {}, count: {}", productId, gradeName, count);
+    try {
+      Product product = findProductByIdForUpdate(productId);
+      product.decreaseSeatGradeAvailable(gradeName, count);
+      log.debug("등급별 좌석 차감. productId: {}, grade: {}, count: {}", productId, gradeName, count);
+
+      // 성공 로그 발행
+      logEventPublisher.publishSeatGradeDecreased(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishSeatOperationFailed(productId);
+      log.error(
+          "등급별 좌석 차감 실패. productId: {}, grade: {}, count: {}, error: {}",
+          productId,
+          gradeName,
+          count,
+          e.getMessage(),
+          e);
+      throw e;
+    }
   }
 
   /**
    * 등급별 잔여 좌석을 복구한다.
    *
    * <p>예매 취소 시 호출된다. SeatGrade와 SeatSummary 모두 갱신된다. 동시성 제어를 위해 비관적 락을 사용한다.
+   *
+   * <p>성공 시 SEAT_GRADE_INCREASED 로그를, 실패 시 SEAT_OPERATION_FAILED 로그를 발행한다.
    *
    * @param productId 상품 ID
    * @param gradeName 등급명
@@ -471,9 +683,25 @@ public class ProductCommandService {
    * @throws ProductException 해당 등급이 없는 경우
    */
   public void increaseSeatGradeAvailable(Long productId, String gradeName, int count) {
-    Product product = findProductByIdForUpdate(productId);
-    product.increaseSeatGradeAvailable(gradeName, count);
-    log.debug("등급별 좌석 복구. productId: {}, grade: {}, count: {}", productId, gradeName, count);
+    try {
+      Product product = findProductByIdForUpdate(productId);
+      product.increaseSeatGradeAvailable(gradeName, count);
+      log.debug("등급별 좌석 복구. productId: {}, grade: {}, count: {}", productId, gradeName, count);
+
+      // 성공 로그 발행
+      logEventPublisher.publishSeatGradeIncreased(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishSeatOperationFailed(productId);
+      log.error(
+          "등급별 좌석 복구 실패. productId: {}, grade: {}, count: {}, error: {}",
+          productId,
+          gradeName,
+          count,
+          e.getMessage(),
+          e);
+      throw e;
+    }
   }
 
   // ========== 통계 관련 ==========
@@ -495,24 +723,53 @@ public class ProductCommandService {
    *
    * <p>Redis에서 배치로 동기화할 때 사용한다.
    *
+   * <p>성공 시 VIEW_COUNT_SYNCED 로그를, 실패 시 VIEW_COUNT_SYNC_FAILED 로그를 발행한다.
+   *
    * @param productId 상품 ID
    * @param viewCount 동기화할 조회수
    * @throws ProductException 상품을 찾을 수 없는 경우
    */
   public void syncViewCount(Long productId, Long viewCount) {
-    Product product = findProductById(productId);
-    product.syncViewCount(viewCount);
+    try {
+      Product product = findProductById(productId);
+      product.syncViewCount(viewCount);
+
+      // 성공 로그 발행
+      logEventPublisher.publishViewCountSynced(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishViewCountSyncFailed(productId);
+      log.error(
+          "조회수 동기화 실패. productId: {}, viewCount: {}, error: {}",
+          productId,
+          viewCount,
+          e.getMessage(),
+          e);
+      throw e;
+    }
   }
 
   /**
    * 예매 수를 증가한다.
    *
+   * <p>성공 시 RESERVATION_COUNT_INCREASED 로그를, 실패 시 RESERVATION_COUNT_CHANGE_FAILED 로그를 발행한다.
+   *
    * @param productId 상품 ID
    * @throws ProductException 상품을 찾을 수 없는 경우
    */
   public void incrementReservationCount(Long productId) {
-    Product product = findProductById(productId);
-    product.incrementReservationCount();
+    try {
+      Product product = findProductById(productId);
+      product.incrementReservationCount();
+
+      // 성공 로그 발행
+      logEventPublisher.publishReservationCountIncreased(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishReservationCountChangeFailed(productId);
+      log.error("예매 수 증가 실패. productId: {}, error: {}", productId, e.getMessage(), e);
+      throw e;
+    }
   }
 
   /**
@@ -520,12 +777,24 @@ public class ProductCommandService {
    *
    * <p>예매 취소 시 호출된다.
    *
+   * <p>성공 시 RESERVATION_COUNT_DECREASED 로그를, 실패 시 RESERVATION_COUNT_CHANGE_FAILED 로그를 발행한다.
+   *
    * @param productId 상품 ID
    * @throws ProductException 상품을 찾을 수 없는 경우
    */
   public void decrementReservationCount(Long productId) {
-    Product product = findProductById(productId);
-    product.decrementReservationCount();
+    try {
+      Product product = findProductById(productId);
+      product.decrementReservationCount();
+
+      // 성공 로그 발행
+      logEventPublisher.publishReservationCountDecreased(productId);
+    } catch (Exception e) {
+      // 실패 로그 발행
+      logEventPublisher.publishReservationCountChangeFailed(productId);
+      log.error("예매 수 감소 실패. productId: {}, error: {}", productId, e.getMessage(), e);
+      throw e;
+    }
   }
 
   // ========== VO 조립 (Create) ==========
