@@ -5,8 +5,8 @@ import com.tickatch.product_service.product.application.messaging.event.ProductL
 /**
  * 상품 로그 이벤트 발행 인터페이스.
  *
- * <p>Application 레이어에서 정의하고, Infrastructure 레이어에서 구현한다.
- * 이를 통해 Application은 메시징 기술(RabbitMQ, Kafka 등)에 의존하지 않는다.
+ * <p>Application 레이어에서 정의하고, Infrastructure 레이어에서 구현한다. 이를 통해 Application은 메시징 기술(RabbitMQ, Kafka
+ * 등)에 의존하지 않는다.
  *
  * <p>DIP(의존성 역전 원칙)를 적용하여 도메인 로직과 인프라스트럭처를 분리한다.
  *
@@ -26,16 +26,15 @@ import com.tickatch.product_service.product.application.messaging.event.ProductL
  * @author Tickatch
  * @since 1.0.0
  * @see ProductLogEvent
- * @see com.tickatch.product_service.product.infrastructure.messaging.log.publisher.RabbitProductLogPublisher
+ * @see
+ *     com.tickatch.product_service.product.infrastructure.messaging.log.publisher.RabbitProductLogPublisher
  */
 public interface ProductLogEventPublisher {
 
   /**
    * 상품 로그 이벤트를 발행한다.
    *
-   * <p>발행된 이벤트는 로그 서비스로 전송되어 상품 활동 이력으로 기록된다.
-   * 발행 실패 시에도 비즈니스 로직에 영향을 주지 않도록 예외를 던지지 않고
-   * 로그로 기록한다.
+   * <p>발행된 이벤트는 로그 서비스로 전송되어 상품 활동 이력으로 기록된다. 발행 실패 시에도 비즈니스 로직에 영향을 주지 않도록 예외를 던지지 않고 로그로 기록한다.
    *
    * @param event 발행할 상품 로그 이벤트
    */

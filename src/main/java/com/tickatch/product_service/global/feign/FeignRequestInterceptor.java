@@ -15,12 +15,13 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  * <p>현재 요청의 인증 헤더와 추적 정보를 다른 서비스로 전파한다.
  *
  * <p>전파하는 헤더:
+ *
  * <ul>
- *   <li>X-User-Id: 사용자 ID</li>
- *   <li>X-Trace-Id: 커스텀 추적 ID (MdcFilter용)</li>
- *   <li>X-B3-TraceId: B3 추적 ID (Brave/Zipkin용)</li>
- *   <li>X-B3-SpanId: B3 스팬 ID (Brave/Zipkin용)</li>
- *   <li>X-B3-Sampled: 샘플링 여부 (Brave/Zipkin용)</li>
+ *   <li>X-User-Id: 사용자 ID
+ *   <li>X-Trace-Id: 커스텀 추적 ID (MdcFilter용)
+ *   <li>X-B3-TraceId: B3 추적 ID (Brave/Zipkin용)
+ *   <li>X-B3-SpanId: B3 스팬 ID (Brave/Zipkin용)
+ *   <li>X-B3-Sampled: 샘플링 여부 (Brave/Zipkin용)
  * </ul>
  *
  * @author Tickatch
@@ -31,6 +32,7 @@ public class FeignRequestInterceptor implements RequestInterceptor {
 
   // 커스텀 헤더
   private static final String HEADER_USER_ID = "X-User-Id";
+  private static final String HEADER_USER_TYPE = "X-User-Type";
   private static final String HEADER_TRACE_ID = "X-Trace-Id";
 
   // B3 헤더 (Brave/Zipkin 표준)
@@ -46,6 +48,7 @@ public class FeignRequestInterceptor implements RequestInterceptor {
     if (attributes != null) {
       HttpServletRequest request = attributes.getRequest();
       propagateHeader(request, template, HEADER_USER_ID);
+      propagateHeader(request, template, HEADER_USER_TYPE);
     }
 
     // Brave가 MDC에 설정한 traceId/spanId 전파
