@@ -97,8 +97,7 @@ public class RabbitMQConfig {
   /**
    * 상품 로그 큐 이름.
    *
-   * <p>로그 서비스에서 상품 관련 로그를 수신하기 위한 큐이다.
-   * 상품 생성, 수정, 상태 변경 등의 로그 이벤트가 이 큐로 전송된다.
+   * <p>로그 서비스에서 상품 관련 로그를 수신하기 위한 큐이다. 상품 생성, 수정, 상태 변경 등의 로그 이벤트가 이 큐로 전송된다.
    */
   public static final String QUEUE_PRODUCT_LOG = "tickatch.product.log.queue";
 
@@ -150,9 +149,8 @@ public class RabbitMQConfig {
   /**
    * 로그 이벤트용 Topic Exchange를 생성한다.
    *
-   * <p>로그 서비스에서 정의한 Exchange이지만, Product 서비스에서도
-   * 로그 메시지 발행을 위해 선언한다. 상품 관련 로그 이벤트가
-   * 이 Exchange를 통해 로그 서비스로 전달된다.
+   * <p>로그 서비스에서 정의한 Exchange이지만, Product 서비스에서도 로그 메시지 발행을 위해 선언한다. 상품 관련 로그 이벤트가 이 Exchange를 통해 로그
+   * 서비스로 전달된다.
    *
    * @return durable Topic Exchange
    */
@@ -236,8 +234,7 @@ public class RabbitMQConfig {
   /**
    * 상품 로그 큐를 생성한다.
    *
-   * <p>로그 서비스에서 정의한 큐이지만, Product 서비스에서도
-   * 바인딩 선언을 위해 정의한다. 메시지 처리 실패 시 DLQ로 이동한다.
+   * <p>로그 서비스에서 정의한 큐이지만, Product 서비스에서도 바인딩 선언을 위해 정의한다. 메시지 처리 실패 시 DLQ로 이동한다.
    *
    * @return DLQ 설정이 포함된 durable Queue
    */
@@ -328,9 +325,8 @@ public class RabbitMQConfig {
   /**
    * 상품 로그 큐와 로그 Exchange를 바인딩한다.
    *
-   * <p>로그 Exchange의 product.log 라우팅 키를 상품 로그 큐에 바인딩한다.
-   * Product 서비스에서 발행한 로그 메시지가 이 바인딩을 통해
-   * 로그 서비스의 상품 로그 큐로 전달된다.
+   * <p>로그 Exchange의 product.log 라우팅 키를 상품 로그 큐에 바인딩한다. Product 서비스에서 발행한 로그 메시지가 이 바인딩을 통해 로그 서비스의
+   * 상품 로그 큐로 전달된다.
    *
    * @param productLogQueue 바인딩할 큐
    * @param logExchange 바인딩할 Exchange
@@ -480,8 +476,7 @@ public class RabbitMQConfig {
   /**
    * 로그 Dead Letter Exchange를 생성한다.
    *
-   * <p>로그 서비스에서 정의한 DLX이지만, Product 서비스에서도
-   * DLQ 바인딩 선언을 위해 정의한다.
+   * <p>로그 서비스에서 정의한 DLX이지만, Product 서비스에서도 DLQ 바인딩 선언을 위해 정의한다.
    *
    * @return DLX용 Topic Exchange
    */

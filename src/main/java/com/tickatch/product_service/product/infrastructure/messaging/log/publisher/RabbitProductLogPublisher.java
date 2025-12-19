@@ -13,9 +13,8 @@ import org.springframework.stereotype.Component;
 /**
  * RabbitMQ 기반 상품 로그 이벤트 발행자.
  *
- * <p>상품 도메인에서 발생하는 주요 액션에 대한 로그 이벤트를 RabbitMQ를 통해
- * 로그 서비스로 발행한다. 로그 발행 실패 시에도 비즈니스 로직에 영향을 주지
- * 않도록 예외를 던지지 않고 에러 로그로 기록한다.
+ * <p>상품 도메인에서 발생하는 주요 액션에 대한 로그 이벤트를 RabbitMQ를 통해 로그 서비스로 발행한다. 로그 발행 실패 시에도 비즈니스 로직에 영향을 주지 않도록
+ * 예외를 던지지 않고 에러 로그로 기록한다.
  *
  * <p>메시징 설정:
  *
@@ -60,8 +59,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
   /**
    * {@inheritDoc}
    *
-   * <p>RabbitMQ를 통해 로그 Exchange로 이벤트를 발행한다. 발행 실패 시 예외를 던지지 않고
-   * 에러 로그로 기록하여 비즈니스 로직에 영향을 주지 않는다.
+   * <p>RabbitMQ를 통해 로그 Exchange로 이벤트를 발행한다. 발행 실패 시 예외를 던지지 않고 에러 로그로 기록하여 비즈니스 로직에 영향을 주지 않는다.
    */
   @Override
   public void publish(ProductLogEvent event) {
@@ -88,9 +86,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
   // 생성/수정 관련
   // ========================================
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishCreated(Long productId) {
     ProductLogEvent event = ProductLogEvent.create(productId, ProductActionType.CREATED);
@@ -98,9 +94,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.info("상품 생성 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishCreateFailed() {
     ProductLogEvent event = ProductLogEvent.create(null, ProductActionType.CREATE_FAILED);
@@ -108,9 +102,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.warn("상품 생성 실패 로그 발행.");
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishUpdated(Long productId) {
     ProductLogEvent event = ProductLogEvent.create(productId, ProductActionType.UPDATED);
@@ -118,9 +110,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.info("상품 수정 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishUpdateFailed(Long productId) {
     ProductLogEvent event = ProductLogEvent.create(productId, ProductActionType.UPDATE_FAILED);
@@ -132,9 +122,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
   // 심사 관련
   // ========================================
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishSubmittedForApproval(Long productId) {
     ProductLogEvent event =
@@ -143,9 +131,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.info("심사 요청 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishSubmitForApprovalFailed(Long productId) {
     ProductLogEvent event =
@@ -154,9 +140,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.warn("심사 요청 실패 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishApproved(Long productId) {
     ProductLogEvent event = ProductLogEvent.create(productId, ProductActionType.APPROVED);
@@ -164,9 +148,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.info("상품 승인 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishApproveFailed(Long productId) {
     ProductLogEvent event = ProductLogEvent.create(productId, ProductActionType.APPROVE_FAILED);
@@ -174,9 +156,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.warn("상품 승인 실패 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishRejected(Long productId) {
     ProductLogEvent event = ProductLogEvent.create(productId, ProductActionType.REJECTED);
@@ -184,9 +164,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.info("상품 반려 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishRejectFailed(Long productId) {
     ProductLogEvent event = ProductLogEvent.create(productId, ProductActionType.REJECT_FAILED);
@@ -194,9 +172,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.warn("상품 반려 실패 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishResubmitted(Long productId) {
     ProductLogEvent event = ProductLogEvent.create(productId, ProductActionType.RESUBMITTED);
@@ -204,9 +180,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.info("상품 재제출 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishResubmitFailed(Long productId) {
     ProductLogEvent event = ProductLogEvent.create(productId, ProductActionType.RESUBMIT_FAILED);
@@ -231,9 +205,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.info("판매 예정 상태 변경 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishScheduleFailed(Long productId) {
     ProductLogEvent event =
@@ -255,9 +227,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.info("판매 시작 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishSaleStartFailed(Long productId) {
     ProductLogEvent event =
@@ -279,9 +249,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.info("판매 종료 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishSaleCloseFailed(Long productId) {
     ProductLogEvent event =
@@ -303,9 +271,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.info("상품 완료 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishCompleteFailed(Long productId) {
     ProductLogEvent event =
@@ -326,9 +292,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.info("상품 취소 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishCancelFailed(Long productId) {
     ProductLogEvent event = ProductLogEvent.create(productId, ProductActionType.CANCEL_FAILED);
@@ -366,9 +330,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.debug("잔여 좌석 복구 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishSeatGradeDecreased(Long productId) {
     ProductLogEvent event =
@@ -377,9 +339,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.debug("등급별 좌석 차감 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishSeatGradeIncreased(Long productId) {
     ProductLogEvent event =
@@ -388,9 +348,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.debug("등급별 좌석 복구 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishSeatOperationFailed(Long productId) {
     ProductLogEvent event =
@@ -416,9 +374,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
     log.debug("조회수 동기화 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishViewCountSyncFailed(Long productId) {
     ProductLogEvent event =
@@ -435,8 +391,7 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
   @Override
   public void publishReservationCountIncreased(Long productId) {
     ProductLogEvent event =
-        ProductLogEvent.createSystemEvent(
-            productId, ProductActionType.RESERVATION_COUNT_INCREASED);
+        ProductLogEvent.createSystemEvent(productId, ProductActionType.RESERVATION_COUNT_INCREASED);
     publish(event);
     log.debug("예매 수 증가 로그 발행. productId: {}", productId);
   }
@@ -449,15 +404,12 @@ public class RabbitProductLogPublisher implements ProductLogEventPublisher {
   @Override
   public void publishReservationCountDecreased(Long productId) {
     ProductLogEvent event =
-        ProductLogEvent.createSystemEvent(
-            productId, ProductActionType.RESERVATION_COUNT_DECREASED);
+        ProductLogEvent.createSystemEvent(productId, ProductActionType.RESERVATION_COUNT_DECREASED);
     publish(event);
     log.debug("예매 수 감소 로그 발행. productId: {}", productId);
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public void publishReservationCountChangeFailed(Long productId) {
     ProductLogEvent event =

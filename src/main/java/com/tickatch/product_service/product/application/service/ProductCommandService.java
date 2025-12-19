@@ -590,11 +590,7 @@ public class ProductCommandService {
       // 실패 로그 발행
       logEventPublisher.publishSeatOperationFailed(productId);
       log.error(
-          "잔여 좌석 차감 실패. productId: {}, count: {}, error: {}",
-          productId,
-          count,
-          e.getMessage(),
-          e);
+          "잔여 좌석 차감 실패. productId: {}, count: {}, error: {}", productId, count, e.getMessage(), e);
       throw e;
     }
   }
@@ -622,11 +618,7 @@ public class ProductCommandService {
       // 실패 로그 발행
       logEventPublisher.publishSeatOperationFailed(productId);
       log.error(
-          "잔여 좌석 복구 실패. productId: {}, count: {}, error: {}",
-          productId,
-          count,
-          e.getMessage(),
-          e);
+          "잔여 좌석 복구 실패. productId: {}, count: {}, error: {}", productId, count, e.getMessage(), e);
       throw e;
     }
   }

@@ -3,8 +3,7 @@ package com.tickatch.product_service.product.application.messaging.event;
 /**
  * 상품 로그 액션 타입.
  *
- * <p>상품 도메인에서 발생할 수 있는 모든 액션 타입을 정의한다.
- * 로그 서비스에서 이 값을 기준으로 액션을 분류하고 저장한다.
+ * <p>상품 도메인에서 발생할 수 있는 모든 액션 타입을 정의한다. 로그 서비스에서 이 값을 기준으로 액션을 분류하고 저장한다.
  *
  * <p>카테고리별 액션:
  *
@@ -12,7 +11,8 @@ package com.tickatch.product_service.product.application.messaging.event;
  *   <li>생성/수정: CREATED, UPDATED, CREATE_FAILED, UPDATE_FAILED
  *   <li>심사: SUBMITTED_FOR_APPROVAL, APPROVED, REJECTED, RESUBMITTED 및 각 FAILED
  *   <li>상태 변경: SCHEDULED, SALE_STARTED, SALE_CLOSED, COMPLETED, CANCELLED 및 각 FAILED
- *   <li>좌석 관리: SEATS_DECREASED, SEATS_INCREASED, SEAT_GRADE_DECREASED, SEAT_GRADE_INCREASED, SEAT_OPERATION_FAILED
+ *   <li>좌석 관리: SEATS_DECREASED, SEATS_INCREASED, SEAT_GRADE_DECREASED, SEAT_GRADE_INCREASED,
+ *       SEAT_OPERATION_FAILED
  *   <li>통계: VIEW_COUNT_SYNCED, RESERVATION_COUNT_INCREASED, RESERVATION_COUNT_DECREASED 및 각 FAILED
  * </ul>
  *
